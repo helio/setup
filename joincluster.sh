@@ -32,6 +32,17 @@ case "$PUPPET" in
 esac
 
 # Export metrics to our backend
+read -r -p "[3] We'd like to expose your system metrics to our plattform? [Y/n]" METRICS
+case "$METRICS" in
+    [yY][eE][sS]|[yY])
+        printf "installing prometheus node exporter. Remember to allow http access from IP 0.0.0.0/0\n"
+        chmod u+x node_exporter
+        ./node_exporter
+        ;;
+     *)
+        printf "bummer\n"
+        ;;
+esac
 
 # Choose workload type (docker, pure binary)
 
