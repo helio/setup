@@ -1,7 +1,10 @@
-#!/bin/bash
+#!/bin/sh
+set -e
+
 # install script to join our cluster
 # curl -s joincluster.sh | sudo bash
 # TODO: replace wget with curl
+# TODO: setup https://get.docker.com/ way
 
 # Input token from backend
 
