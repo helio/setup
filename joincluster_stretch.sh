@@ -1,20 +1,22 @@
 #!/bin/sh
 set -e
 
+# This script is meant for quick & easy install via:
+#   $ curl -fsSL un.idling.host -o start-computing.sh
+#   $ sh start-computing.sh
+#
 # install script to join our cluster
-# curl -s joincluster.sh | sudo bash
 # TODO: replace wget with curl
-# TODO: setup https://get.docker.com/ way
 
 # Input token from backend
 
 # install required packages
-read -r -p "[1] OK to install curl, wget, git, lsb-release package and dependencies? [Y/n]" PACKAGE
+read -r -p "[1] OK to install curl, wget, git, lsb-release, apt-transport-https package and dependencies? [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
 	    printf "installing packages\n"
 	    apt-get update
-	    apt-get install curl wget lsb-release git -y
+	    apt-get install curl wget lsb-release git apt-transport-https -y
         ;;
      *)
 	printf "bummer\n"
