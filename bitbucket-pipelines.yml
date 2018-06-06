@@ -16,6 +16,6 @@ pipelines:
           - mv joincluster_stretch.sh index.html
           - export
           - cat ~/.ssh/config
-          - ssh unidling@nbf01.opsserver.ch
+          - ssh unidling@nbf01.opsserver.ch -i /opt/atlassian/pipelines/agent/data/id_rsa
           - rsync -ravz --delete . unidling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml
           
