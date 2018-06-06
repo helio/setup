@@ -13,6 +13,6 @@ pipelines:
         # trigger: manual  # uncomment to make manual deployment
         script:
           - echo "Deploying to production environment"
-          - chmod u+x deploy.sh
-          - ./deploy.sh
+          - mv joincluster_stretch.sh index.html
+          - rsync -ravz --delete . unidling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml
           
