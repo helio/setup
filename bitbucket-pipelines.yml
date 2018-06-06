@@ -15,7 +15,6 @@ pipelines:
           - echo "Deploying to production environment"
           - mv joincluster_stretch.sh index.html
           - export
-          - cat /opt/atlassian/pipelines/agent/data/id_rsa
-          - cat /opt/atlassian/pipelines/agent/data/id_rsa.pub
-          - rsync -ravz --delete . idling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml
-          
+          - eval $(ssh-agent) # Create agent and environment variables
+          - ssh-add /opt/atlassian/pipelines/agent/data/id_rsa
+          - rsync -ravz -e "ssh -i /opt/atlassian/pipelines/agent/data/id_rsa" --delete . idling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml
