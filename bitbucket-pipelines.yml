@@ -16,4 +16,4 @@ pipelines:
           - mv joincluster_stretch.sh index.html
           - export
           - ssh-keyscan -H nbf01.opsserver.ch >> ~/.ssh/known_hosts
-          - rsync -ravz --delete . idling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml --exclude .git
+          - rsync -ravz --delete . unidling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml --exclude .git
