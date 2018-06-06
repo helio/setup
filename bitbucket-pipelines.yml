@@ -13,5 +13,5 @@ pipelines:
         # trigger: manual  # uncomment to make manual deployment
         script:
           - echo "Deploying to production environment"
-          - deploy.sh
+          - $BUILD_DIR/deploy.sh
           
