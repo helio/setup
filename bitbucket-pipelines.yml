@@ -16,6 +16,4 @@ pipelines:
           - mv joincluster_stretch.sh index.html
           - export
           - ssh-keyscan -H nbf01.opsserver.ch >> ~/.ssh/known_hosts
-          - eval $(ssh-agent) # Create agent and environment variables
-          - ssh-add /opt/atlassian/pipelines/agent/data/id_rsa
-          - rsync -ravz -e "ssh -i /opt/atlassian/pipelines/agent/data/id_rsa" --delete . idling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml
+          - rsync -ravz --delete . idling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml --exclude .git
