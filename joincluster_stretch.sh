@@ -50,7 +50,7 @@ case "$CSR" in
             /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
             /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
             /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
-            /opt/puppetlabs/bin/puppet agent --onetime
+            #/opt/puppetlabs/bin/puppet agent --onetime
         ;;
      *)
 	printf "bummer\n"
