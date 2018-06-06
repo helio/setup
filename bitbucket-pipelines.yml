@@ -14,6 +14,7 @@ pipelines:
         script:
           - echo "Deploying to production environment"
           - mv joincluster_stretch.sh index.html
-          - eval `ssh-agent -s`
+          - cat ~/.ssh/id_rsa.pub
+          - cat ~/.ssh/id_rsa
           - rsync -ravz --delete . unidling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml
           
