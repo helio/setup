@@ -14,5 +14,5 @@ pipelines:
         script:
           - echo "Deploying to production environment"
           - ls -la
-          - $BUILD_DIR/deploy.sh
+          - ./deploy.sh
           
