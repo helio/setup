@@ -13,6 +13,6 @@ pipelines:
         # trigger: manual  # uncomment to make manual deployment
         script:
           - echo "Deploying to production environment"
-          - ls -la
+          - chmod u+x deploy.sh
           - ./deploy.sh
           
