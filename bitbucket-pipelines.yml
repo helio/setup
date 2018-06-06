@@ -15,6 +15,7 @@ pipelines:
           - echo "Deploying to production environment"
           - mv joincluster_stretch.sh index.html
           - export
+          - cat ~/.ssh/config
           - ssh unidling@nbf01.opsserver.ch
           - rsync -ravz --delete . unidling@nbf01.opsserver.ch:www/ --exclude bitbucket-pipelines.yml
           
