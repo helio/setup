@@ -48,6 +48,7 @@ case "$CSR" in
         printf "requesting token ...\n"
             printf 'custom_attributes:\n  challengePassword: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoie1wiY2VydG5hbWVcIjpcInRlc3RpbmcuYy5wZXBweS1jZW50ZXItMTM1NDA5LmludGVybmFsXCIsXCJyZXF1ZXN0ZXJcIjpcInB1cHBldFwiLFwicmV1c2FibGVcIjpmYWxzZSxcInZhbGlkZm9yXCI6NzIwMCxcInV1aWRcIjpcImQxNTY4ZjdiLTgwODktNDM5OS1hY2Y0LTFjMDMwNzYyNTU0NFwifSIsImV4cCI6IjE1MjgzMjIzMjgifQ.RJWcbLziS0o-Qkr_F_6ItiU5jxMwVJgjRFC1ybCvlbQi5ggLEYyYLXuMZGY7RgOyUMJcXH6yGQUUginbb4d-tw"' >>
             /etc/puppetlabs/puppet/csr_attributes.yaml
+            /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
             /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
             /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
             /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
