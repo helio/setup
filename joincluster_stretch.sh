@@ -46,9 +46,9 @@ read -r -p "[3] OK request token from our backend and create a CSR? [Y/n]" CSR
 case "$CSR" in
     [yY][eE][sS]|[yY])
         printf "requesting token ...\n"
-            printf 'custom_attributes:\n  challengePassword: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoie1wiY2VydG5hbWVcIjpcInRlc3RpbmcuYy5wZXBweS1jZW50ZXItMTM1NDA5LmludGVybmFsXCIsXCJyZXF1ZXN0ZXJcIjpcInB1cHBldFwiLFwicmV1c2FibGVcIjpmYWxzZSxcInZhbGlkZm9yXCI6NzIwMCxcInV1aWRcIjpcImQxNTY4ZjdiLTgwODktNDM5OS1hY2Y0LTFjMDMwNzYyNTU0NFwifSIsImV4cCI6IjE1MjgzMjIzMjgifQ.RJWcbLziS0o-Qkr_F_6ItiU5jxMwVJgjRFC1ybCvlbQi5ggLEYyYLXuMZGY7RgOyUMJcXH6yGQUUginbb4d-tw"' >>
-            /etc/puppetlabs/puppet/csr_attributes.yaml
-            /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
+            read -s token
+            printf 'custom_attributes:\n  challengePassword: "$token"' >> /etc/puppetlabs/puppet/csr_attributes.yaml
+            #/opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
             /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
             /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
             /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
@@ -61,18 +61,18 @@ esac
 
 
 # Export metrics to our backend
-#read -r -p "[4] We'd like to expose your system metrics to our plattform? [Y/n]" METRICS
-#case "$METRICS" in
-#    [yY][eE][sS]|[yY])
-#        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from IP 0.0.0.0/0\n"
-#        wget https://bitbucket.org/kevinhaefeli2/setup/raw/529be465ef48237d3e45b4faff84df124cb0f137/node_exporter
-#        chmod u+x node_exporter
-#        ./node_exporter
-#        ;;
-#     *)
-#        printf "bummer\n"
-#        ;;
-#esac
+read -r -p "[4] We'd like to expose your system metrics to our plattform? [Y/n]" METRICS
+case "$METRICS" in
+    [yY][eE][sS]|[yY])
+        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from IP 0.0.0.0/0\n"
+        puppet resource package prometheus-node-exporter ensure=present
+        puppet resource service prometheus-node-exporter ensure=running enable=true
+        # exporting resource to puppetdb or ping api?
+        ;;
+     *)
+        printf "bummer\n"
+        ;;
+esac
 
 # Choose workload type (docker, pure binary)
 
