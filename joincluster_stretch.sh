@@ -11,7 +11,7 @@ set -e
 # Input token from backend
 
 # install required packages
-read -r -p "[1] OK to install curl, wget, git, lsb-release, apt-transport-https package and dependencies? [Y/n]" PACKAGE
+read -r -p "[1] The following packages and dependencies are going to be installed: curl, wget, git, lsb-release, apt-transport-https. [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
 	    printf "installing packages\n"
@@ -27,7 +27,7 @@ esac
 # e.g. installed puppet
 
 # install puppet agent
-read -r -p "[2] Continue with installing the puppet agent? [Y/n]" PUPPET
+read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
         printf "installing puppet\n"
@@ -42,7 +42,7 @@ case "$PUPPET" in
 esac
 
 # get JWT and create certificate & CSR
-read -r -p "[3] OK request token from our backend and create a CSR? [Y/n]" CSR
+read -r -p "[3] Request a token from the idling.host API and create a certificate-signing-request to the certificate authortiy. Continue? [Y/n]" CSR
 case "$CSR" in
     [yY][eE][sS]|[yY])
         printf "requesting token ...\n"
@@ -60,10 +60,11 @@ esac
 
 
 # Export metrics to our backend
-read -r -p "[4] We'd like to expose your system metrics to our plattform? [Y/n]" METRICS
+read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
 case "$METRICS" in
     [yY][eE][sS]|[yY])
-        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from IP 0.0.0.0/0\n"
+        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from prometheus.idling.host / IP: \n"
+        dig +short prometheus.idling.host
         /opt/puppetlabs/puppet/bin/puppet resource package prometheus-node-exporter ensure=present
         /opt/puppetlabs/puppet/bin/puppet resource service prometheus-node-exporter ensure=running enable=true
         # exporting resource to puppetdb or ping api?
@@ -75,7 +76,7 @@ esac
 
 
 # Choose workload type (docker, pure binary)
-printf "[5] How should we deploy the computing on your node? \n"
+printf "[5] How should the computing be deployed onto your node? \n"
 read -r -p "Choose 1 [Docker] 2 [Service] 3 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [1])
