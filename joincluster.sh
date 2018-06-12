@@ -52,12 +52,13 @@ esac
 
 # check for conflics
 # e.g. installed puppet
-read -r -p "[1] Checking for conflicts [Y/n]" CHECK
+read -r -p "[0] Checking for conflicts [Y/n]" CHECK
 case "$CHECK" in
     [yY][eE][sS]|[yY])
         if command_exists puppet; then
             printf "puppet is already installed, only continue if it's OK to overwrite settings \n"
         fi
+        ;;
     *)
 	printf "bummer\n"
         ;;
@@ -79,7 +80,7 @@ if [ "$user" != 'root' ]; then
 fi
 
 # install required packages
-read -r -p "[0] The following packages and dependencies are going to be installed: $reqs [Y/n]" PACKAGE
+read -r -p "[1] The following packages and dependencies are going to be installed: $reqs [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
 	    printf "installing packages\n"
@@ -93,7 +94,7 @@ esac
 
 # install puppet agent based os release
 
-read -r -p "[1] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
+read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
         printf "installing puppet\n"
@@ -108,7 +109,7 @@ case "$PUPPET" in
 esac
 
 # get JWT and create certificate & CSR
-read -r -p "[2] Request a token from the idling.host API and create a certificate-signing-request to the certificate authortiy. Continue? [Y/n]" CSR
+read -r -p "[3] Request a token from the idling.host API and create a certificate-signing-request to the certificate authortiy. Continue? [Y/n]" CSR
 case "$CSR" in
     [yY][eE][sS]|[yY])
         printf "requesting token ...\n"
@@ -127,7 +128,7 @@ esac
 
 
 # Export metrics to our backend
-read -r -p "[3] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
+read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
 case "$METRICS" in
     [yY][eE][sS]|[yY])
         printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from prometheus.idling.host / IP: \n"
@@ -143,17 +144,17 @@ esac
 
 
 # Choose workload type (docker, pure binary)
-printf "[4] How should the computing be deployed onto your node? \n"
-read -r -p "Choose 1 [Docker] 2 [Service] 3 [Stop]" WORKLOAD
+printf "[5] How should the computing be deployed onto your node? \n"
+read -r -p "Choose 0 [Docker] 1 [Service] 2 [Stop]" WORKLOAD
 case "$WORKLOAD" in
-    [1])
+    [0])
         echo "Going to install Docker"
         /opt/puppetlabs/puppet/bin/puppet agent -t
         ;;
-    [2])
+    [1])
         echo "Option not available yet"
         ;;
-    [3])
+    [2])
         echo "bummer"
         ;;
     *)
