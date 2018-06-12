@@ -132,8 +132,8 @@ esac
 read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
 case "$METRICS" in
     [yY][eE][sS]|[yY])
-        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from prometheus.idling.host / IP: \n"
-        dig +short prometheus.idling.host
+        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from metrics.idling.host / IP: \n"
+        dig +short metrics.idling.host
         /opt/puppetlabs/puppet/bin/puppet resource package prometheus-node-exporter ensure=present
         /opt/puppetlabs/puppet/bin/puppet resource service prometheus-node-exporter ensure=running enable=true
         # exporting resource to puppetdb or ping api?
