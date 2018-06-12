@@ -1,35 +1,90 @@
-#!/bin/bash
+#!/bin/sh
+set -e
+
+# This script is meant for quick & easy install via:
+#   $ curl -fsSL un.idling.host -o start-computing.sh
+#   $ sh start-computing.sh
+#
 # install script to join our cluster
-# curl -s joincluster.sh | sudo bash
 # TODO: replace wget with curl
 
-# Input token from backend
+# our default functions
+command_exists() {
+	command -v "$@" > /dev/null 2>&1
+}
+
+get_distribution() {
+	lsb_dist=""
+	# Every system that we officially support has /etc/os-release
+	if [ -r /etc/os-release ]; then
+		lsb_dist="$(. /etc/os-release && echo "$ID")"
+	fi
+	echo "$lsb_dist"
+}
+
+# supported & tested distros
+DISTRO_MAP="
+x86_64-debian-jessie
+x86_64-debian-stretch
+"
+
+# required packages
+reqs="apt-transport-https ca-certificates curl git lsb-release"
+
+# Platform detection
+lsb_dist=$( get_distribution )
+lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
+
+# check for conflics
+# e.g. installed puppet
+read -r -p "[1] Checking for conflicts [Y/n]" CHECK
+case "$CHECK" in
+    [yY][eE][sS]|[yY])
+        if command_exists puppet; then
+            printf "puppet is already installed, only continue if it's OK to overwrite settings \n"
+        fi
+    *)
+	printf "bummer\n"
+        ;;
+esac
+
+# check requirements
+if [ "$user" != 'root' ]; then
+    if command_exists sudo; then
+        sh_c='sudo -E sh -c'
+    elif command_exists su; then
+        sh_c='su -c'
+    else
+        cat >&2 <<-'EOF'
+			Error: this installer needs the ability to run commands as root.
+			We are unable to find either "sudo" or "su" available to make this happen.
+			EOF
+			exit 1
+    fi
+fi
 
 # install required packages
-read -r -p "[1] OK to install curl, wget, git, lsb-release package and dependencies? [Y/n]" PACKAGE
+read -r -p "[0] The following packages and dependencies are going to be installed: $reqs [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
 	    printf "installing packages\n"
-	    apt-get update
-	    apt-get install curl wget lsb-release git -y
+        apt-get update -qq >/dev/null
+        apt-get install -y -qq $reqs >/dev/null
         ;;
      *)
 	printf "bummer\n"
         ;;
 esac
 
-# check for conflics
-# e.g. installed puppet
-
 # install puppet agent
-read -r -p "[2] Continue with installing the puppet agent? [Y/n]" PUPPET
+read -r -p "[1] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
         printf "installing puppet\n"
-	    wget https://apt.puppetlabs.com/puppet5-release-jessie.deb
-	    dpkg -i puppet5-release-jessie.deb
+	    wget https://apt.puppetlabs.com/puppet5-release-stretch.deb
+	    dpkg -i puppet5-release-stretch.deb
 	    apt-get update
-        apt-get install puppet-agent=5.4.0-1jessie -y
+        apt-get install puppet-agent=5.5.1-1stretch -y
         ;;
      *)
 	printf "bummer\n"
@@ -37,14 +92,16 @@ case "$PUPPET" in
 esac
 
 # get JWT and create certificate & CSR
-read -r -p "[3] OK request token from our backend and create a CSR? [Y/n]" CSR
+read -r -p "[2] Request a token from the idling.host API and create a certificate-signing-request to the certificate authortiy. Continue? [Y/n]" CSR
 case "$CSR" in
     [yY][eE][sS]|[yY])
         printf "requesting token ...\n"
+        read -r -p "token: " token
+        printf "custom_attributes:\n  challengePassword: \"$token\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
+        /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
         /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
         /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
-        /opt/puppetlabs/puppet/bin/puppet config set environment setupscript
-        /opt/puppetlabs/bin/puppet agent --onetime
+        /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
         ;;
      *)
 	printf "bummer\n"
@@ -53,31 +110,38 @@ esac
 
 
 # Export metrics to our backend
-#read -r -p "[4] We'd like to expose your system metrics to our plattform? [Y/n]" METRICS
-#case "$METRICS" in
-#    [yY][eE][sS]|[yY])
-#        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from IP 0.0.0.0/0\n"
-#        wget https://bitbucket.org/kevinhaefeli2/setup/raw/529be465ef48237d3e45b4faff84df124cb0f137/node_exporter
-#        chmod u+x node_exporter
-#        ./node_exporter
-#        ;;
-#     *)
-#        printf "bummer\n"
-#        ;;
-#esac
+read -r -p "[3] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
+case "$METRICS" in
+    [yY][eE][sS]|[yY])
+        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from prometheus.idling.host / IP: \n"
+        dig +short prometheus.idling.host
+        /opt/puppetlabs/puppet/bin/puppet resource package prometheus-node-exporter ensure=present
+        /opt/puppetlabs/puppet/bin/puppet resource service prometheus-node-exporter ensure=running enable=true
+        # exporting resource to puppetdb or ping api?
+        ;;
+     *)
+        printf "bummer\n"
+        ;;
+esac
+
 
 # Choose workload type (docker, pure binary)
-
-# Deploy and join mcollective broker
-
-# Check backend for sucess
-# (based on mco ping answer)
-
-# Install chosen workload type
-# puppet apply docker script
-
-# Get docker swarm settings from MCO / puppettask
-# and join the swarm
+printf "[4] How should the computing be deployed onto your node? \n"
+read -r -p "Choose 1 [Docker] 2 [Service] 3 [Stop]" WORKLOAD
+case "$WORKLOAD" in
+    [1])
+        echo "Going to install Docker"
+        /opt/puppetlabs/puppet/bin/puppet agent -t
+        ;;
+    [2])
+        echo "Option not available yet"
+        ;;
+    [3])
+        echo "bummer"
+        ;;
+    *)
+        printf "bummer\n"
+        ;;
+ esac
 
 # Run workload and earn money $$$
-
