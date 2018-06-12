@@ -28,7 +28,7 @@ x86_64-debian-stretch
 "
 
 # required packages
-reqs="apt-transport-https ca-certificates curl git lsb-release dig"
+reqs="apt-transport-https ca-certificates curl git lsb-release dnsutils"
 
 # Platform detection
 lsb_dist=$( get_distribution )
