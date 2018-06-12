@@ -6,7 +6,6 @@ set -e
 #   $ sh start-computing.sh
 #
 # install script to join our cluster
-# TODO: replace wget with curl
 
 # our default functions
 command_exists() {
@@ -34,6 +33,22 @@ reqs="apt-transport-https ca-certificates curl git lsb-release"
 # Platform detection
 lsb_dist=$( get_distribution )
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
+case "$lsb_dist" in
+    debian)
+        dist_version="$(sed 's/\/.*//' /etc/debian_version | sed 's/\..*//')"
+        case "$dist_version" in
+			9)
+				dist_version="stretch"
+			;;
+			8)
+				dist_version="jessie"
+			;;
+			7)
+				dist_version="wheezy"
+			;;
+		esac
+	;;
+esac
 
 # check for conflics
 # e.g. installed puppet
@@ -76,15 +91,16 @@ case "$PACKAGE" in
         ;;
 esac
 
-# install puppet agent
+# install puppet agent based os release
+
 read -r -p "[1] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
         printf "installing puppet\n"
-	    wget https://apt.puppetlabs.com/puppet5-release-stretch.deb
-	    dpkg -i puppet5-release-stretch.deb
-	    apt-get update
-        apt-get install puppet-agent=5.5.1-1stretch -y
+	    curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
+	    dpkg -i puppet5-release-$dist_version.deb
+	    apt-get update -qq >/dev/null
+        apt-get install -v -qq puppet-agent >/dev/null
         ;;
      *)
 	printf "bummer\n"
@@ -98,6 +114,7 @@ case "$CSR" in
         printf "requesting token ...\n"
         read -r -p "token: " token
         printf "custom_attributes:\n  challengePassword: \"$token\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
+        # TODO: first check if file exists
         /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
         /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
         /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
