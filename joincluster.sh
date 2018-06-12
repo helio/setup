@@ -28,7 +28,7 @@ x86_64-debian-stretch
 "
 
 # required packages
-reqs="apt-transport-https ca-certificates curl git lsb-release"
+reqs="apt-transport-https ca-certificates curl git lsb-release dig"
 
 # Platform detection
 lsb_dist=$( get_distribution )
@@ -58,6 +58,7 @@ case "$CHECK" in
         if command_exists puppet; then
             printf "puppet is already installed, only continue if it's OK to overwrite settings \n"
         fi
+        TODO: also check for puppet file if command not available
         ;;
     *)
 	printf "bummer\n"
@@ -101,7 +102,7 @@ case "$PUPPET" in
 	    curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
 	    dpkg -i puppet5-release-$dist_version.deb
 	    apt-get update -qq >/dev/null
-        apt-get install -v -qq puppet-agent >/dev/null
+        apt-get install -y -qq puppet-agent >/dev/null
         ;;
      *)
 	printf "bummer\n"
