@@ -52,11 +52,12 @@ register_user() {
     while [ "$status" != "416" ]
     do
         echo "Mail not confirmed yet. waiting 10s and try again"
-        wait(10s)
+        sleep 10;
         uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.status')
     done
     #
     uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.token')
+    echo("$uidtoken")
 }
 
 # supported & tested distros
@@ -96,6 +97,7 @@ case "$CHECK" in
         if command_exists puppet; then
             printf "puppet is already installed, only continue if it's OK to overwrite settings \n"
         fi
+        #TODO: show sucess message
         #TODO: also check for puppet file if command not available
         ;;
     *)
@@ -163,8 +165,18 @@ case "$start" in
         # on-board user (email, hostname)
         printf "Please enter your mail and connect / register your account.\n"
         read -r -p "Mail: " mail
-        if register_user mail; then
 
+        #use registration function and pass mail var
+        $uid(register_user mail)
+
+        # join cluster
+        if uid; then
+            if join_cluster uid; then
+                printf "Cluster joined"
+            fi
+        fi
+        ;;
+esac
 
 
 # get JWT and create certificate & CSR
