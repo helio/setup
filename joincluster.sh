@@ -59,10 +59,10 @@ register_user() {
     do
         echo "Mail not confirmed yet. waiting 10s and try again"
         sleep 10;
-        status=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":"'$fqdn'","email":"'$mail'"}' $register_ping | jq -r '.status')
+        status=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"email":"'$mail'"}' $register_ping | jq -r '.status')
     done
     # request uid token to join cluster afterwards
-    uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":"'$fqdn'","email":"'$mail'"}' $gettoken | jq -r '.token')
+    uidtoken=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"email":"'$mail'"}' $gettoken | jq -r '.token')
     echo "$uidtoken"
 }
 
