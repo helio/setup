@@ -57,7 +57,7 @@ register_user() {
     done
     #
     uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.token')
-    echo("$uidtoken")
+    echo "$uidtoken"
 }
 
 # supported & tested distros
@@ -167,7 +167,7 @@ case "$start" in
         read -r -p "Mail: " mail
 
         #use registration function and pass mail var
-        $uid(register_user mail)
+        uid=$(register_user mail)
 
         # join cluster
         if uid; then
