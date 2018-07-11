@@ -35,8 +35,10 @@ get_distribution() {
 # join new server to users cluster
 join_cluster() {
     token="$@"
+    # get hostname TODO: repladce with fqdn()
+    fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
     # fire join api command
-    csrtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$token\"}' $join| jq -r '.token')
+    csrtoken=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"token":"'$token'"}' $join| jq -r '.token')
     #TODO: parse possible json error messages
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
     #TODO: first check if file exists
