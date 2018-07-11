@@ -9,9 +9,9 @@ set -e
 
 # api endpoints
 base="https://panel.idling.host/"
-register="$base/server/create"
-register_ping="$base/server/create/ping"
-gettoken="$base/server/create/gettoken"
+register="$base/server/init"
+register_ping="$base/server/init"
+gettoken="$base/server/gettoken"
 join="$base/server/register"
 
 # our default functions
