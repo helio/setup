@@ -7,11 +7,16 @@ set -e
 #
 # install script to join our cluster
 
+# api endpoints
+register="https://panel.idling.host/server/create"
+join="https://panel.idling.host/server/register"
+
 # our default functions
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
 }
 
+# check operating system
 get_distribution() {
 	lsb_dist=""
 	# Every system that we officially support has /etc/os-release
@@ -21,6 +26,39 @@ get_distribution() {
 	echo "$lsb_dist"
 }
 
+# join new server to users cluster
+join_cluster() {
+    token="$@"
+    # fire join api command
+    csrtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$token\"}' $join| jq -r '.token')
+    #TODO: parse possible json error messages
+    printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
+    #TODO: first check if file exists
+    /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
+    /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
+    /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
+    /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
+}
+
+# register new user
+register_user() {
+    mail="$@"
+    # get hostname
+    fqdn=$(facter -p fqdn)
+    # fire user register command
+    status=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.status')
+    printf "Please check your Inbox and confirm the link"
+    # loop until mail is confirmed / yay, DOSing our API
+    while [ "$status" != "416" ]
+    do
+        echo "Mail not confirmed yet. waiting 10s and try again"
+        wait(10s)
+        uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.status')
+    done
+    #
+    uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.token')
+}
+
 # supported & tested distros
 DISTRO_MAP="
 x86_64-debian-jessie
@@ -28,7 +66,7 @@ x86_64-debian-stretch
 "
 
 # required packages
-reqs="apt-transport-https ca-certificates curl git lsb-release dnsutils"
+reqs="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
 
 # Platform detection
 lsb_dist=$( get_distribution )
@@ -58,7 +96,7 @@ case "$CHECK" in
         if command_exists puppet; then
             printf "puppet is already installed, only continue if it's OK to overwrite settings \n"
         fi
-        TODO: also check for puppet file if command not available
+        #TODO: also check for puppet file if command not available
         ;;
     *)
 	printf "bummer\n"
@@ -109,18 +147,30 @@ case "$PUPPET" in
         ;;
 esac
 
+# new user or new server?
+read -r -p "[3] Do you already have an account at idling.host? [Y/n]" start
+case "$start" in
+    [yY][eE][sS]|[yY])
+        # join cluster with a new server by token
+        # TODO: provide shell script cli param
+        printf "Please enter your token to on-board the node to the cluster.\n"
+        read -r -p "Your token: " uid
+        if join_cluster uid; then
+            printf "Cluster joined"
+        fi
+        ;;
+    *)
+        # on-board user (email, hostname)
+        printf "Please enter your mail and connect / register your account.\n"
+        read -r -p "Mail: " mail
+        if register_user mail; then
+
+
+
 # get JWT and create certificate & CSR
-read -r -p "[3] Request a token from the idling.host API and create a certificate-signing-request to the certificate authortiy. Continue? [Y/n]" CSR
+read -r -p "[4] Request a token from the idling.host API and create a certificate-signing-request to the certificate authortiy. Continue? [Y/n]" CSR
 case "$CSR" in
     [yY][eE][sS]|[yY])
-        printf "requesting token ...\n"
-        read -r -p "token: " token
-        printf "custom_attributes:\n  challengePassword: \"$token\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
-        # TODO: first check if file exists
-        /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
-        /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
-        /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
-        /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
         ;;
      *)
 	printf "bummer\n"
@@ -129,7 +179,7 @@ esac
 
 
 # Export metrics to our backend
-read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
+read -r -p "[5] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
 case "$METRICS" in
     [yY][eE][sS]|[yY])
         printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from metrics.idling.host / IP: \n"
@@ -145,7 +195,7 @@ esac
 
 
 # Choose workload type (docker, pure binary)
-printf "[5] How should the computing be deployed onto your node? \n"
+printf "[6] How should the computing be deployed onto your node? \n"
 read -r -p "Choose 0 [Docker] 1 [Service] 2 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [0])
