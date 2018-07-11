@@ -8,13 +8,19 @@ set -e
 # install script to join our cluster
 
 # api endpoints
-register="https://panel.idling.host/server/create"
-join="https://panel.idling.host/server/register"
+base="https://panel.idling.host/"
+register="$base/server/create"
+register_ping="$base/server/create/ping"
+gettoken="$base/server/create/gettoken"
+join="$base/server/register"
 
 # our default functions
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
 }
+
+# TODO: add curl function
+run_curl()
 
 # check operating system
 get_distribution() {
@@ -42,21 +48,21 @@ join_cluster() {
 
 # register new user
 register_user() {
-    mail="$@"
+    mail="$1"
     # get hostname
-    fqdn=$(/opt/puppetlabs/bin/facter -p fqdn)
+    fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
     # fire user register command
-    status=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.status')
+    status=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":"'$fqdn'","email":"'$mail'"}' $register | jq -r '.status')
     printf "Please check your Inbox and confirm the link"
     # loop until mail is confirmed / yay, DOSing our API
     while [ "$status" != "416" ]
     do
         echo "Mail not confirmed yet. waiting 10s and try again"
         sleep 10;
-        uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.status')
+        status=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":"'$fqdn'","email":"'$mail'"}' $register_ping | jq -r '.status')
     done
-    #
-    uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.token')
+    # request uid token to join cluster afterwards
+    uidtoken=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":"'$fqdn'","email":"'$mail'"}' $gettoken | jq -r '.token')
     echo "$uidtoken"
 }
 
