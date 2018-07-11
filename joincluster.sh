@@ -20,7 +20,7 @@ command_exists() {
 }
 
 # TODO: add curl function
-run_curl()
+#run_curl()
 
 # check operating system
 get_distribution() {
@@ -52,7 +52,7 @@ register_user() {
     # get hostname
     fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
     # fire user register command
-    status=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":"'$fqdn'","email":"'$mail'"}' $register | jq -r '.status')
+    status=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":"'$fqdn'","email":"'$mail'"}' $register | jq -r '.status')
     printf "Please check your Inbox and confirm the link"
     # loop until mail is confirmed / yay, DOSing our API
     while [ "$status" != "416" ]
@@ -173,7 +173,7 @@ case "$start" in
         read -r -p "Mail: " mail
 
         #use registration function and pass mail var
-        uid=$(register_user mail)
+        uid=$(register_user $mail)
 
         # join cluster
         if uid; then
