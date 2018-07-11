@@ -44,7 +44,7 @@ join_cluster() {
 register_user() {
     mail="$@"
     # get hostname
-    fqdn=$(facter -p fqdn)
+    fqdn=$(/opt/puppetlabs/bin/facter -p fqdn)
     # fire user register command
     status=$(curl -X POST -H "Content-Type: application/json" -d '{"fqdn":\"$fqdn\","email":\"$mail\"}' $register | jq -r '.status')
     printf "Please check your Inbox and confirm the link"
