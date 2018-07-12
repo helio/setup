@@ -62,7 +62,7 @@ join_cluster() {
     csrtoken=$(curl_response $json $join |jq -r '.token')
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
     #TODO: first check if file exists
-    /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
+    /opt/puppetlabs/puppet/bin/puppet config set certname $fqdn
     /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
     /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
     /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
@@ -82,7 +82,7 @@ register_user() {
     do
         echo "Mail not confirmed yet. waiting 10s and try again"
         sleep 10;
-        status=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"email":"'$mail'"}' $register_ping | jq -r '.status')
+        status=$(curl_status $json $register_ping)
     done
     # request uid token to join cluster afterwards
     uidtoken=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"email":"'$mail'"}' $gettoken | jq -r '.token')
