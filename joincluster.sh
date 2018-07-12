@@ -19,9 +19,28 @@ command_exists() {
 	command -v "$@" > /dev/null 2>&1
 }
 
-# TODO: add curl function
-#run_curl()
+# run curl with json data ($1) and target url ($2) and get http status
+run_curl_status() {
+    json="$1"
+    url="$2"
+    response=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{'$json'}' $url)
+    status=$?
+    return $status
+}
 
+# run curl with json data ($1) and target url ($2) and get http status
+run_curl_response() {
+    json="$1"
+    url="$2"
+    response=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{'$json'}' $url)
+    return $response
+}
+
+# resolve fqdn of the host
+get_fqdn() {
+    fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
+    return $fqdn
+}
 # check operating system
 get_distribution() {
 	lsb_dist=""
@@ -35,11 +54,13 @@ get_distribution() {
 # join new server to users cluster
 join_cluster() {
     token="$@"
-    # get hostname TODO: repladce with fqdn()
-    fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
+    # get hostname
+    fqdn=(get_fqdn)
+
+    # prepare curl
+    json="fqdn":'$fqdn',"token":"'$token'"
     # fire join api command
-    csrtoken=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"token":"'$token'"}' $join| jq -r '.token')
-    #TODO: parse possible json error messages
+    csrtoken=(run_curl_response $json $join |jq -r '.token')
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
     #TODO: first check if file exists
     /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
@@ -52,9 +73,10 @@ join_cluster() {
 register_user() {
     mail="$1"
     # get hostname
-    fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
+    fqdn=(get_fqdn)
     # fire user register command
-    status=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"email":"'$mail'"}' $register | jq -r '.status')
+    json="fqdn":'$fqdn',"email":"'$mail'"
+    status=$(run_curl_status $json $register | jq-r '.status')
     printf "Please check your Inbox and confirm the link"
     # loop until mail is confirmed / yay, DOSing our API
     while [ "$status" != "416" ]
