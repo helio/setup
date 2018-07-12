@@ -20,7 +20,7 @@ command_exists() {
 }
 
 # run curl with json data ($1) and target url ($2) and get http status
-run_curl_status() {
+curl_status() {
     json="$1"
     url="$2"
     response=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{'$json'}' $url)
@@ -29,17 +29,17 @@ run_curl_status() {
 }
 
 # run curl with json data ($1) and target url ($2) and get http status
-run_curl_response() {
+curl_response() {
     json="$1"
     url="$2"
     response=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{'$json'}' $url)
-    return $response
+    echo "$response"
 }
 
 # resolve fqdn of the host
 get_fqdn() {
     fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
-    return $fqdn
+    echo "$fqdn"
 }
 # check operating system
 get_distribution() {
@@ -56,11 +56,10 @@ join_cluster() {
     token="$@"
     # get hostname
     fqdn=$(get_fqdn)
-
     # prepare curl
     json="fqdn":'$fqdn',"token":"'$token'"
     # fire join api command
-    csrtoken=$(run_curl_response $json $join |jq -r '.token')
+    csrtoken=$(curl_response $json $join |jq -r '.token')
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
     #TODO: first check if file exists
     /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
@@ -76,7 +75,7 @@ register_user() {
     fqdn=$(get_fqdn)
     # fire user register command
     json="fqdn":'$fqdn',"email":"'$mail'"
-    status=$(run_curl_status $json $register | jq-r '.status')
+    status=$(curl_status $json $register | jq-r '.status')
     printf "Please check your Inbox and confirm the link"
     # loop until mail is confirmed / yay, DOSing our API
     while [ "$status" != "416" ]
