@@ -55,12 +55,12 @@ get_distribution() {
 join_cluster() {
     token="$@"
     # get hostname
-    fqdn=(get_fqdn)
+    fqdn=$(get_fqdn)
 
     # prepare curl
     json="fqdn":'$fqdn',"token":"'$token'"
     # fire join api command
-    csrtoken=(run_curl_response $json $join |jq -r '.token')
+    csrtoken=$(run_curl_response $json $join |jq -r '.token')
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
     #TODO: first check if file exists
     /opt/puppetlabs/puppet/bin/puppet config set certname token.idling.host
@@ -73,7 +73,7 @@ join_cluster() {
 register_user() {
     mail="$1"
     # get hostname
-    fqdn=(get_fqdn)
+    fqdn=$(get_fqdn)
     # fire user register command
     json="fqdn":'$fqdn',"email":"'$mail'"
     status=$(run_curl_status $json $register | jq-r '.status')
