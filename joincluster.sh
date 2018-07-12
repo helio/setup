@@ -57,7 +57,7 @@ join_cluster() {
     # get hostname
     fqdn=$(get_fqdn)
     # prepare curl
-    json="fqdn":'$fqdn',"token":"'$token'"
+    json="\"fqdn\":$fqdn,\"token\":\"$token\""
     # fire join api command
     csrtoken=$(curl_response $json $join |jq -r '.token')
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
@@ -74,8 +74,8 @@ register_user() {
     # get hostname
     fqdn=$(get_fqdn)
     # fire user register command
-    json="fqdn":'$fqdn',"email":"'$mail'"
-    status=$(curl_status $json $register | jq-r '.status')
+    json="\"fqdn\":$fqdn,\"email\":\"$mail\""
+    status=$(curl_status $json $register)
     printf "Please check your Inbox and confirm the link"
     # loop until mail is confirmed / yay, DOSing our API
     while [ "$status" != "416" ]
@@ -185,8 +185,8 @@ case "$start" in
         # join cluster with a new server by token
         # TODO: provide shell script cli param
         printf "Please enter your token to on-board the node to the cluster.\n"
-        read -r -p "Your token: " uid
-        if join_cluster uid; then
+        read -r -p "Your token: " token
+        if join_cluster $token; then
             printf "Cluster joined"
         fi
         ;;
@@ -200,7 +200,7 @@ case "$start" in
 
         # join cluster
         if uid; then
-            if join_cluster uid; then
+            if join_cluster $uid; then
                 printf "Cluster joined"
             fi
         fi
