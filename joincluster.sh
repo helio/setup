@@ -14,9 +14,32 @@ register_ping="$base/server/init"
 gettoken="$base/server/gettoken"
 join="$base/server/register"
 
-# our default functions
+# directories
+puppetpath="/etc/puppetlabs/puppet"
+
+# files
+csr_attributes="$puppetpath/csr_attributes.yaml"
+puppet="/opt/puppetlabs/puppet/bin/puppet"
+
+# pass options to the script
+while getopts t:m: option
+do
+case "${option}" in
+    t) token=${OPTARG};;
+    m) mail=${OPTARG};;
+esac
+done
+
+# check if command exists
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
+}
+
+# check if file exists
+file_exists() {
+    if [ -f "$@" ] then
+        echo $?
+    fi
 }
 
 # run curl with json data ($1) and target url ($2) and get http status
@@ -56,27 +79,42 @@ join_cluster() {
     token="$@"
     # get hostname
     fqdn=$(get_fqdn)
-    # prepare curl
+    # json data to send
     json="\"fqdn\":$fqdn,\"token\":\"$token\""
-    # fire join api command
-    csrtoken=$(curl_response $json $join |jq -r '.token')
-    printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> /etc/puppetlabs/puppet/csr_attributes.yaml
-    #TODO: first check if file exists
-    /opt/puppetlabs/puppet/bin/puppet config set certname $fqdn
-    /opt/puppetlabs/puppet/bin/puppet config set use_srv_records true
-    /opt/puppetlabs/puppet/bin/puppet config set srv_domain idling.host
-    /opt/puppetlabs/puppet/bin/puppet config set environment setupscript --section agent
+
+    # get jwt for csr attributes
+    if file_exists $csr_attributes; then
+        printf "$csr_attributes already exists. please delete"
+    else
+        csrtoken=$(curl_response $json $join |jq -r '.token')
+        printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $scr_attributes
+    fi
+
+    # configure puppet
+    if file_exists $puppet; then
+        $puppet config set certname $fqdn
+        $puppet config set use_srv_records true
+        $puppet config set srv_domain idling.host
+        $puppet config set environment setupscript --section agent
+    else
+        printf "puppet binary doesnt exists, please check package installation"
+    fi
 }
 
 # register new user
 register_user() {
     mail="$1"
+
     # get hostname
     fqdn=$(get_fqdn)
-    # fire user register command
+
+    # json data to send
     json="\"fqdn\":$fqdn,\"email\":\"$mail\""
+
+    # register user
     status=$(curl_status $json $register)
     printf "Please check your Inbox and confirm the link"
+
     # loop until mail is confirmed / yay, DOSing our API
     while [ "$status" != "416" ]
     do
@@ -84,8 +122,10 @@ register_user() {
         sleep 10;
         status=$(curl_status $json $register_ping)
     done
+
     # request uid token to join cluster afterwards
-    uidtoken=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{"fqdn":'$fqdn',"email":"'$mail'"}' $gettoken | jq -r '.token')
+    # TODO: api answers in json
+    uidtoken=$(curl_response $json $gettoken)
     echo "$uidtoken"
 }
 
@@ -99,7 +139,7 @@ x86_64-debian-stretch
 reqs="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
 
 # Platform detection
-lsb_dist=$( get_distribution )
+lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
 case "$lsb_dist" in
     debian)
@@ -119,35 +159,33 @@ case "$lsb_dist" in
 esac
 
 # check for conflics
-# e.g. installed puppet
 read -r -p "[0] Checking for conflicts [Y/n]" CHECK
 case "$CHECK" in
     [yY][eE][sS]|[yY])
         if command_exists puppet; then
-            printf "puppet is already installed, only continue if it's OK to overwrite settings \n"
+            printf "WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
         fi
-        #TODO: show sucess message
-        #TODO: also check for puppet file if command not available
+        if file_exists $puppet; then
+            printf "WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
+        fi
+        if [ "$user" != 'root' ]; then
+            if command_exists sudo; then
+                #TODO: support sudo / su
+                sh_c='sudo -E sh -c'
+            elif command_exists su; then
+                sh_c='su -c'
+            else
+		    	printf "Error: this installer needs the ability to run commands as root. We are unable to find either "sudo" or "su" available to make this happen."
+			    exit 1
+            fi
+        fi
+        printf "Check successful passed \n"
         ;;
     *)
-	printf "bummer\n"
+        # no action, next step
         ;;
 esac
 
-# check requirements
-if [ "$user" != 'root' ]; then
-    if command_exists sudo; then
-        sh_c='sudo -E sh -c'
-    elif command_exists su; then
-        sh_c='su -c'
-    else
-        cat >&2 <<-'EOF'
-			Error: this installer needs the ability to run commands as root.
-			We are unable to find either "sudo" or "su" available to make this happen.
-			EOF
-			exit 1
-    fi
-fi
 
 # install required packages
 read -r -p "[1] The following packages and dependencies are going to be installed: $reqs [Y/n]" PACKAGE
@@ -158,7 +196,8 @@ case "$PACKAGE" in
         apt-get install -y -qq $reqs >/dev/null
         ;;
      *)
-	printf "bummer\n"
+        printf "Can't continue. Exiting"
+        exit 1;
         ;;
 esac
 
@@ -174,7 +213,8 @@ case "$PUPPET" in
         apt-get install -y -qq puppet-agent >/dev/null
         ;;
      *)
-	printf "bummer\n"
+        printf "Can't continue. Exiting"
+        exit 1;
         ;;
 esac
 
@@ -183,17 +223,20 @@ read -r -p "[3] Do you already have an account at idling.host? [Y/n]" start
 case "$start" in
     [yY][eE][sS]|[yY])
         # join cluster with a new server by token
-        # TODO: provide shell script cli param
-        printf "Please enter your token to on-board the node to the cluster.\n"
-        read -r -p "Your token: " token
+        if [[ -z "$token" ]]; then
+            printf "Please enter your token to on-board the node to the cluster.\n"
+            read -r -p "Your token: " token
+        fi
         if join_cluster $token; then
             printf "Cluster joined"
         fi
         ;;
     *)
         # on-board user (email, hostname)
-        printf "Please enter your mail and connect / register your account.\n"
-        read -r -p "Mail: " mail
+        if [[ -z "$mail" ]]; then
+            printf "Please enter your mail and connect / register your account.\n"
+            read -r -p "Mail: " mail
+        fi
 
         #use registration function and pass mail var
         uid=$(register_user $mail)
@@ -207,41 +250,30 @@ case "$start" in
         ;;
 esac
 
-
-# get JWT and create certificate & CSR
-read -r -p "[4] Request a token from the idling.host API and create a certificate-signing-request to the certificate authortiy. Continue? [Y/n]" CSR
-case "$CSR" in
-    [yY][eE][sS]|[yY])
-        ;;
-     *)
-	printf "bummer\n"
-        ;;
-esac
-
-
 # Export metrics to our backend
-read -r -p "[5] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
+read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
 case "$METRICS" in
     [yY][eE][sS]|[yY])
         printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from metrics.idling.host / IP: \n"
         dig +short metrics.idling.host
-        /opt/puppetlabs/puppet/bin/puppet resource package prometheus-node-exporter ensure=present
-        /opt/puppetlabs/puppet/bin/puppet resource service prometheus-node-exporter ensure=running enable=true
-        # exporting resource to puppetdb or ping api?
+        $puppet resource package prometheus-node-exporter ensure=present
+        $puppet resource service prometheus-node-exporter ensure=running enable=true
+        # TODO: exporting resource to puppetdb or ping api?
         ;;
      *)
-        printf "bummer\n"
+         # no action, contiunue
         ;;
 esac
 
 
 # Choose workload type (docker, pure binary)
-printf "[6] How should the computing be deployed onto your node? \n"
+printf "[5] How should the computing be deployed onto your node? \n"
 read -r -p "Choose 0 [Docker] 1 [Service] 2 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [0])
         echo "Going to install Docker"
-        /opt/puppetlabs/puppet/bin/puppet agent -t
+        $puppet  agent -t
+        $puppet  agent -t
         ;;
     [1])
         echo "Option not available yet"
