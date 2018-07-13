@@ -210,7 +210,7 @@ case "$PACKAGE" in
     [yY][eE][sS]|[yY])
 
         # check if already installed
-        dpkg -s $1 &> /dev/null
+        dpkg -s $reqs &> /dev/null
         if [ $? -eq 0 ]; then
             # done
         else
@@ -230,12 +230,17 @@ esac
 read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
-        #TODO: check first if installed
-        printf "installing puppet\n"
-	    curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
-	    dpkg -i puppet5-release-$dist_version.deb
-	    apt-get update -qq >/dev/null
-        apt-get install -y -qq puppet-agent >/dev/null
+        # check if already installed
+        dpkg -s puppet-agent &> /dev/null
+        if [ $? -eq 0 ]; then
+            # done
+        else
+            printf "installing puppet\n"
+            curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
+            dpkg -i puppet5-release-$dist_version.deb
+            apt-get update -qq >/dev/null
+            apt-get install -y -qq puppet-agent >/dev/null
+        fi
         ;;
      *)
         printf "Can't continue. Exiting"
