@@ -49,9 +49,8 @@ file_exists() {
 curl_status() {
     json="$1"
     url="$2"
-    response=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{'$json'}' $url)
-    status=$?
-    return $status
+    status=$(curl -s -o /dev/null -X POST -H "Content-Type: application/json" -d '{'$json'}' -w "%{http_code}" $url)
+    echo $status
 }
 
 # run curl with json data ($1) and target url ($2) and get http status
@@ -128,13 +127,17 @@ register_ping() {
     # json data to send
     json="\"fqdn\":$fqdn,\"email\":\"$mail\""
 
-    # loop until mail is confirmed / yay, DOSing our API
-    while [ "$status" != "416" ]
+    while true
     do
-        echo "Mail not confirmed yet. waiting 10s and try again"
-        sleep 10;
+        # loop until mail is confirmed / yay, DOSing our API
         status=$(curl_status $json $register_ping)
-    done
+
+        if [ "${status}" -eq 416 ]; then
+            break
+        else
+            sleep 10;
+        fi
+   done
 
     # request uid token to join cluster afterwards
     # TODO: api answers in json
