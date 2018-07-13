@@ -115,8 +115,18 @@ register_user() {
     json="\"fqdn\":$fqdn,\"email\":\"$mail\""
 
     # register user
-    status=$(curl_status $json $register)
+    curl_response $json $register
     printf "Please check your Inbox and confirm the link"
+}
+
+register_ping() {
+    mail="$1"
+
+    # get hostname
+    fqdn=$(get_fqdn)
+
+    # json data to send
+    json="\"fqdn\":$fqdn,\"email\":\"$mail\""
 
     # loop until mail is confirmed / yay, DOSing our API
     while [ "$status" != "416" ]
@@ -193,6 +203,7 @@ esac
 read -r -p "[1] The following packages and dependencies are going to be installed: $reqs [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
+        #TODO: check first if installed
 	    printf "installing packages\n"
         apt-get update -qq >/dev/null
         apt-get install -y -qq $reqs >/dev/null
@@ -208,6 +219,7 @@ esac
 read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
+        #TODO: check first if installed
         printf "installing puppet\n"
 	    curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
 	    dpkg -i puppet5-release-$dist_version.deb
@@ -240,8 +252,11 @@ case "$start" in
             read -r -p "Mail: " mail
         fi
 
-        #use registration function and pass mail var
-        uid=$(register_user $mail)
+        # register user with mail
+        register_user $mail
+
+        # check if mail is confirmed
+        uid=$(register_ping $mail)
 
         # join cluster
         if [ -z $uid]; then
