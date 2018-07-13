@@ -16,10 +16,20 @@ join="$base/server/register"
 
 # directories
 puppetpath="/etc/puppetlabs/puppet"
+puppetbin="/opt/puppetlabs/puppet/bin/"
 
 # files
 csr_attributes="$puppetpath/csr_attributes.yaml"
-puppet="/opt/puppetlabs/puppet/bin/puppet"
+puppet="$puppetbin/puppet"
+
+# supported & tested distros
+DISTRO_MAP="
+x86_64-debian-jessie
+x86_64-debian-stretch
+"
+
+# required packages
+reqs="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
 
 # pass options to the script
 while getopts t:m: option
@@ -53,7 +63,7 @@ curl_status() {
     echo $status
 }
 
-# run curl with json data ($1) and target url ($2) and get http status
+# run curl with json data ($1) and target url ($2) and get response
 curl_response() {
     json="$1"
     url="$2"
@@ -145,15 +155,6 @@ register_ping() {
     echo "$uidtoken"
 }
 
-# supported & tested distros
-DISTRO_MAP="
-x86_64-debian-jessie
-x86_64-debian-stretch
-"
-
-# required packages
-reqs="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
-
 # Platform detection
 lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
@@ -178,11 +179,12 @@ esac
 read -r -p "[0] Checking for conflicts [Y/n]" CHECK
 case "$CHECK" in
     [yY][eE][sS]|[yY])
+        $msg="WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
         if command_exists puppet; then
-            printf "WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
+            printf "$msg"
         fi
         if file_exists $puppet; then
-            printf "WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
+            printf "$msg"
         fi
         if [ "$user" != 'root' ]; then
             if command_exists sudo; then
@@ -206,10 +208,16 @@ esac
 read -r -p "[1] The following packages and dependencies are going to be installed: $reqs [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
-        #TODO: check first if installed
-	    printf "installing packages\n"
-        apt-get update -qq >/dev/null
-        apt-get install -y -qq $reqs >/dev/null
+
+        # check if already installed
+        dpkg -s $1 &> /dev/null
+        if [ $? -eq 0 ]; then
+            # done
+        else
+            printf "installing packages\n"
+            apt-get update -qq >/dev/null
+            apt-get install -y -qq $reqs >/dev/null
+        fi
         ;;
      *)
         printf "Can't continue. Exiting"
