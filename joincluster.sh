@@ -37,8 +37,11 @@ command_exists() {
 
 # check if file exists
 file_exists() {
-    if [ -f "$@" ] then
-        echo $?
+    if [ -f "$1" ]
+    then
+        return 0
+    else
+        return 1
     fi
 }
 
@@ -61,7 +64,7 @@ curl_response() {
 
 # resolve fqdn of the host
 get_fqdn() {
-    fqdn=$(/opt/puppetlabs/bin/puppet facts |jq '.values .fqdn')
+    fqdn=$($puppet facts |jq '.values .fqdn')
     echo "$fqdn"
 }
 # check operating system
@@ -179,7 +182,6 @@ case "$CHECK" in
 			    exit 1
             fi
         fi
-        printf "Check successful passed \n"
         ;;
     *)
         # no action, next step
@@ -223,7 +225,7 @@ read -r -p "[3] Do you already have an account at idling.host? [Y/n]" start
 case "$start" in
     [yY][eE][sS]|[yY])
         # join cluster with a new server by token
-        if [[ -z "$token" ]]; then
+        if [ -z $token ]; then
             printf "Please enter your token to on-board the node to the cluster.\n"
             read -r -p "Your token: " token
         fi
@@ -233,7 +235,7 @@ case "$start" in
         ;;
     *)
         # on-board user (email, hostname)
-        if [[ -z "$mail" ]]; then
+        if [ -z $mail ]; then
             printf "Please enter your mail and connect / register your account.\n"
             read -r -p "Mail: " mail
         fi
@@ -242,7 +244,7 @@ case "$start" in
         uid=$(register_user $mail)
 
         # join cluster
-        if uid; then
+        if [ -z $uid]; then
             if join_cluster $uid; then
                 printf "Cluster joined"
             fi
