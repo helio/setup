@@ -104,7 +104,7 @@ join_cluster() {
         printf "$csr_attributes already exists. please delete"
     else
         csrtoken=$(curl_response $json $join |jq -r '.token')
-        printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $scr_attributes
+        printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
     fi
 
     # configure puppet
