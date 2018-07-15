@@ -153,11 +153,6 @@ register_ping() {
             sleep 10;
         fi
    done
-
-    # request uid token to join cluster afterwards
-    # TODO: api answers in json
-    uidtoken=$(curl_response $json $gettoken)
-    echo "$uidtoken"
 }
 
 # Platform detection
@@ -275,11 +270,13 @@ case "$start" in
         # check if mail is confirmed
         uid=$(register_ping $mail)
 
-        # join cluster
-        if [ -z $uid]; then
-            if join_cluster $uid; then
-                printf "Cluster joined"
-            fi
+        # join cluster with a new server by token
+        if [ -z $token ]; then
+            printf "Please enter your token to on-board the node to the cluster.\n"
+            read -r -p "Your token: " token
+        fi
+        if join_cluster $token; then
+            printf "Cluster joined"
         fi
         ;;
 esac
