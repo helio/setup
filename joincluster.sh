@@ -299,7 +299,7 @@ esac
 
 # Choose workload type (docker, pure binary)
 printf "[5] How should the computing be deployed onto your node? \n"
-read -r -p "Choose 0 [Docker] 1 [Service] 2 [Stop]" WORKLOAD
+read -r -p "Choose 0 [Docker] 1 [Kubernetes] 2 [Service] 9 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [0])
         echo "Going to install Docker"
@@ -310,10 +310,10 @@ case "$WORKLOAD" in
         echo "Option not available yet"
         ;;
     [2])
-        echo "bummer"
+        echo "Option not available yet"
         ;;
     *)
-        printf "bummer\n"
+        printf "ok, bye ;-( \n"
         ;;
  esac
 
