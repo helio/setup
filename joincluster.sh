@@ -40,6 +40,11 @@ case "${option}" in
 esac
 done
 
+# check if package exists
+pkg_exists() {
+    dpkg --get-selections | grep -q "^$1[[:space:]]*install$" >/dev/null 2>&1
+}
+
 # check if command exists
 command_exists() {
 	command -v "$@" > /dev/null 2>&1
@@ -179,7 +184,7 @@ esac
 read -r -p "[0] Checking for conflicts [Y/n]" CHECK
 case "$CHECK" in
     [yY][eE][sS]|[yY])
-        $msg="WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
+        msg="WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
         if command_exists puppet; then
             printf "$msg"
         fi
@@ -205,18 +210,16 @@ esac
 
 
 # install required packages
-read -r -p "[1] The following packages and dependencies are going to be installed: $reqs [Y/n]" PACKAGE
+read -r -p "[1] The following packages and dependencies are going to be installed: $pkg [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
-
         # check if already installed
-        dpkg -s $reqs &> /dev/null
-        if [ $? -eq 0 ]; then
-            # done
+        if pkg_exists $pkg; then
+            echo "already installed"
         else
             printf "installing packages\n"
             apt-get update -qq >/dev/null
-            apt-get install -y -qq $reqs >/dev/null
+            apt-get install -y -qq $pkg >/dev/null
         fi
         ;;
      *)
@@ -226,14 +229,12 @@ case "$PACKAGE" in
 esac
 
 # install puppet agent based os release
-
 read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
         # check if already installed
-        dpkg -s puppet-agent &> /dev/null
-        if [ $? -eq 0 ]; then
-            # done
+        if pkg_exists puppet-agent; then
+            echo "already installed"
         else
             printf "installing puppet\n"
             curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
