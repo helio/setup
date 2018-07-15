@@ -29,7 +29,7 @@ x86_64-debian-stretch
 "
 
 # required packages
-reqs="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
+pkg="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
 
 # pass options to the script
 while getopts t:m: option
