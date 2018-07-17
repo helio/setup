@@ -30,6 +30,7 @@ x86_64-debian-stretch
 
 # required packages
 pkg="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
+pkg_EL="redhat-lsb-core"
 
 # pass options to the script
 while getopts t:m: option
@@ -158,9 +159,12 @@ register_ping() {
 # Platform detection
 lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
+if command_exists lsb_release; then
+    dist_version="$(lsb_release -cs)"
+fi
+
 case "$lsb_dist" in
     debian)
-        dist_version="$(sed 's/\/.*//' /etc/debian_version | sed 's/\..*//')"
         case "$dist_version" in
 			9)
 				dist_version="stretch"
@@ -174,9 +178,6 @@ case "$lsb_dist" in
 		esac
         ;;
     ubuntu)
-        if command_exists lsb_release; then
-            dist_version="$(lsb_release -cs)"
-        fi
         case "$dist_version" in
             bionic)
                 dist_version="$dist_version" #TODO add some function or cut case
@@ -188,7 +189,21 @@ case "$lsb_dist" in
                 dist_version="$dist_version"
             ;;
             *)
-                printf "Error: Ubuntu $dist_version not supported"
+                printf "Error: $lsb_dist $dist_version not supported"
+            ;;
+        esac
+        ;;
+    centos)
+        dist_version="$(lsb_release -rs|cut -c1)"
+        case "$dist_version" in
+            7)
+                dist_version="$dist_version"
+            ;;
+            6)
+                dist_version="$dist_version"
+            ;;
+            *)
+                printf "Error: $lsb_dist $dist_version not supported"
             ;;
         esac
         ;;
