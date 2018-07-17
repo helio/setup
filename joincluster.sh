@@ -172,6 +172,24 @@ case "$lsb_dist" in
 				dist_version="wheezy"
 			;;
 		esac
+    ubuntu)
+        if command_exists lsb_release; then
+            dist_version="$(lsb_release -cs)"
+        fi
+        case "$dist_version" in
+            bionic)
+                dist_version="$dist_version" #TODO add some function or cut case
+            ;;
+            xenial)
+                dist_version="$dist_version"
+            ;;
+            trusty)
+                dist_version="$dist_version"
+            ;;
+            *)
+                printf "Error: Ubuntu $dist_version not supported"
+            ;;
+        esac
 	;;
 esac
 
@@ -303,8 +321,8 @@ read -r -p "Choose 0 [Docker] 1 [Kubernetes] 2 [Service] 9 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [0])
         echo "Going to install Docker"
-        $puppet  agent -t
-        $puppet  agent -t
+        $puppet agent -t
+        $puppet agent -t
         ;;
     [1])
         echo "Option not available yet"
