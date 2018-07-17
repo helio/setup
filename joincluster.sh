@@ -172,6 +172,7 @@ case "$lsb_dist" in
 				dist_version="wheezy"
 			;;
 		esac
+        ;;
     ubuntu)
         if command_exists lsb_release; then
             dist_version="$(lsb_release -cs)"
@@ -190,7 +191,7 @@ case "$lsb_dist" in
                 printf "Error: Ubuntu $dist_version not supported"
             ;;
         esac
-	;;
+        ;;
 esac
 
 # check for conflics
