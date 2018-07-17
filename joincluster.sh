@@ -322,8 +322,7 @@ read -r -p "Choose 0 [Docker] 1 [Kubernetes] 2 [Service] 9 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [0])
         echo "Going to install Docker"
-        $puppet agent -t
-        $puppet agent -t
+        $puppet agent -t && $puppet agent -t
         ;;
     [1])
         echo "Option not available yet"
