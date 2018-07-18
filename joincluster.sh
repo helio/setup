@@ -229,8 +229,8 @@ case "$PACKAGE" in
                     apt-get install -y -qq $pkg >/dev/null
                     ;;
                 centos|redhat)
-                    yum check-update -qq >/dev/null
-                    yum list installed "$1" >/dev/null 2>&1
+                    yum check-update -q >/dev/null
+                    yum install -y $pkg >/dev/null 2>&1
                     ;;
             esac
         fi
