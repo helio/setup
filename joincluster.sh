@@ -39,7 +39,7 @@ pkg_exists() {
             dpkg --get-selections | grep -q "^$1[[:space:]]*install$" >/dev/null 2>&1
         ;;
         centos|redhat)
-            #TODO
+            yum list installed "$1" >/dev/null 2>&1
         ;;
     esac
 }
@@ -250,7 +250,7 @@ esac
 
 
 # install required packages
-get_packages()
+get_packages
 read -r -p "[1] The following packages and dependencies are going to be installed: $pkg [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
