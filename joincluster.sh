@@ -168,57 +168,21 @@ register_ping() {
 }
 
 # Platform detection
+# Distribution
 lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
-if command_exists lsb_release; then
-    dist_version="$(lsb_release -cs)"
-fi
 
-case "$lsb_dist" in
-    debian)
-        case "$dist_version" in
-			9)
-				dist_version="stretch"
-			;;
-			8)
-				dist_version="jessie"
-			;;
-			7)
-				dist_version="wheezy"
-			;;
-		esac
+# Release version
+if command_exists lsb_release; then
+    case "$lsb_dist" in
+        debian|ubuntu)
+            dist_version="$(lsb_release -cs)"
         ;;
-    ubuntu)
-        case "$dist_version" in
-            bionic)
-                dist_version="$dist_version" #TODO add some function or cut case
-            ;;
-            xenial)
-                dist_version="$dist_version"
-            ;;
-            trusty)
-                dist_version="$dist_version"
-            ;;
-            *)
-                printf "Error: $lsb_dist $dist_version not supported"
-            ;;
-        esac
+        centos)
+            dist_version="$(lsb_release -rs|cut -c1)"
         ;;
-    centos)
-        dist_version="$(lsb_release -rs|cut -c1)"
-        case "$dist_version" in
-            7)
-                dist_version="$dist_version"
-            ;;
-            6)
-                dist_version="$dist_version"
-            ;;
-            *)
-                printf "Error: $lsb_dist $dist_version not supported"
-            ;;
-        esac
-        ;;
-esac
+    esac
+fi
 
 # check for conflics
 read -r -p "[0] Checking for conflicts [Y/n]" CHECK
