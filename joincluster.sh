@@ -229,8 +229,8 @@ case "$PACKAGE" in
                     apt-get install -y -qq $pkg >/dev/null
                     ;;
                 centos|redhat)
-                    yum check-update -q >/dev/null
-                    yum install -y $pkg >/dev/null 2>&1
+                    #yum check-update -q >/dev/null TODO: fix exit codes
+                    yum install -y -q $pkg >/dev/null
                     ;;
             esac
         fi
