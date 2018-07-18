@@ -223,8 +223,16 @@ case "$PACKAGE" in
             echo "already installed"
         else
             printf "installing packages\n"
-            apt-get update -qq >/dev/null
-            apt-get install -y -qq $pkg >/dev/null
+            case "$lsb_dist" in
+                debian|ubuntu)
+                    apt-get update -qq >/dev/null
+                    apt-get install -y -qq $pkg >/dev/null
+                    ;;
+                centos|redhat)
+                    yum check-update -qq >/dev/null
+                    yum list installed "$1" >/dev/null 2>&1
+                    ;;
+            esac
         fi
         ;;
      *)
