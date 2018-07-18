@@ -22,16 +22,6 @@ puppetbin="/opt/puppetlabs/puppet/bin/"
 csr_attributes="$puppetpath/csr_attributes.yaml"
 puppet="$puppetbin/puppet"
 
-# supported & tested distros
-DISTRO_MAP="
-x86_64-debian-jessie
-x86_64-debian-stretch
-"
-
-# required packages
-pkg="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
-pkg_EL="redhat-lsb-core"
-
 # pass options to the script
 while getopts t:m: option
 do
@@ -43,7 +33,15 @@ done
 
 # check if package exists
 pkg_exists() {
-    dpkg --get-selections | grep -q "^$1[[:space:]]*install$" >/dev/null 2>&1
+    lsb_dist=$(get_distribution)
+    case "$lsb_dist" in
+        debian|ubuntu)
+            dpkg --get-selections | grep -q "^$1[[:space:]]*install$" >/dev/null 2>&1
+        ;;
+        centos|redhat)
+            #TODO
+        ;;
+    esac
 }
 
 # check if command exists
@@ -90,6 +88,19 @@ get_distribution() {
 		lsb_dist="$(. /etc/os-release && echo "$ID")"
 	fi
 	echo "$lsb_dist"
+}
+
+# required packages
+get_packages() {
+    lsb_dist=$(get_distribution)
+    case "$lsb_dist" in
+        debian|ubuntu)
+            pkg="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
+        ;;
+        centos|redhat)
+            pkg="redhat-lsb-core"
+        ;;
+    esac
 }
 
 # join new server to users cluster
@@ -239,6 +250,7 @@ esac
 
 
 # install required packages
+get_packages()
 read -r -p "[1] The following packages and dependencies are going to be installed: $pkg [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
