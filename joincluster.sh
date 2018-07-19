@@ -39,7 +39,7 @@ pkg_exists() {
             dpkg --get-selections | grep -q "^$1[[:space:]]*install$" >/dev/null 2>&1
         ;;
         centos|redhat)
-            return 0 # TODO add fast check for centos
+            return 1 # TODO add fast check for centos
         ;;
     esac
 }
