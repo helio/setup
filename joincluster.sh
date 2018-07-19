@@ -95,10 +95,10 @@ get_packages() {
     lsb_dist=$(get_distribution)
     case "$lsb_dist" in
         debian|ubuntu)
-            pkg="apt-transport-https ca-certificates curl git lsb-release dnsutils jq"
+            pkg="apt-transport-https ca-certificates curl lsb-release dnsutils jq"
         ;;
         centos|redhat)
-            pkg="redhat-lsb-core"
+            pkg="ca-certificates curl redhat-lsb-core epel-release bind-utils jq"
         ;;
     esac
 }
@@ -250,10 +250,18 @@ case "$PUPPET" in
             echo "already installed"
         else
             printf "installing puppet\n"
-            curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
-            dpkg -i puppet5-release-$dist_version.deb
-            apt-get update -qq >/dev/null
-            apt-get install -y -qq puppet-agent >/dev/null
+            case "$lsb_dist" in
+                debian|ubuntu)
+                    curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
+                    dpkg -i puppet5-release-$dist_version.deb
+                    apt-get update -qq >/dev/null
+                    apt-get install -y -qq puppet-agent >/dev/null
+                    ;;
+                centos|redhat)
+                    rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
+                    yum instasll -y -q puppet-agent  >/dev/null
+                    ,,
+                esac
         fi
         ;;
      *)
