@@ -39,7 +39,7 @@ pkg_exists() {
             dpkg --get-selections | grep -q "^$1[[:space:]]*install$" >/dev/null 2>&1
         ;;
         centos|redhat)
-            yum list installed "$1" >/dev/null 2>&1
+            return 0 # TODO add fast check for centos
         ;;
     esac
 }
@@ -259,7 +259,7 @@ case "$PUPPET" in
                     ;;
                 centos|redhat)
                     rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
-                    yum instasll -y -q puppet-agent  >/dev/null
+                    yum install -y -q puppet-agent  >/dev/null
                     ,,
                 esac
         fi
