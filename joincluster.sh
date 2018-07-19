@@ -245,24 +245,29 @@ esac
 read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
-        # check if already installed
-        if pkg_exists puppet-agent; then
-            echo "already installed"
-        else
-            printf "installing puppet\n"
             case "$lsb_dist" in
                 debian|ubuntu)
-                    curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
-                    dpkg -i puppet5-release-$dist_version.deb
-                    apt-get update -qq >/dev/null
-                    apt-get install -y -qq puppet-agent >/dev/null
+                    # check if already installed
+                    if pkg_exists puppet-agent; then
+                        printf "puppet already installed"
+                    else
+                        printf "start installing puppet\n"
+                        curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
+                        dpkg -i puppet5-release-$dist_version.deb
+                        apt-get update -qq >/dev/null
+                        apt-get install -y -qq puppet-agent >/dev/null
+                    fi
                     ;;
                 centos|redhat)
-                    rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
-                    yum install -y -q puppet-agent  >/dev/null
+                    if ! rpm -qa | grep -qw puppet-agent$; then
+                        printf "puppet already installed"
+                    else
+                        printf "start installing puppet\n"
+                        rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
+                        yum install -y -q puppet-agent  >/dev/null
+                    fi
                     ,,
                 esac
-        fi
         ;;
      *)
         printf "Can't continue. Exiting"
