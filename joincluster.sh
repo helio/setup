@@ -31,16 +31,43 @@ case "${option}" in
 esac
 done
 
-# check if package exists
-pkg_exists() {
+# check if one package is installed (loop array)
+pkg_exists()
+    installed=$1
     lsb_dist=$(get_distribution)
     case "$lsb_dist" in
         debian|ubuntu)
-            dpkg --get-selections | grep -q "^$1[[:space:]]*install$" >/dev/null 2>&1
+            dpkg --get-selections | grep -q "^$installed[[:space:]]*install$" >/dev/null 2>&1
         ;;
         centos|redhat)
-            return 1 # TODO add fast check for centos
+            rpm -qa | grep -q $installed
         ;;
+    esac
+}
+
+# install packages, if they not exists
+pkg_install() {
+    lsb_dist=$(get_distribution)
+    pkg=$1
+    case "$lsb_dist" in
+        debian|ubuntu)
+            # check if installed
+            installed=$(dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null 2>&1)
+
+            # install if not
+            if installed; then
+                printf "packages already installed, continue"
+            else
+                print "installing packages $pkg"
+                apt-get update -qq >/dev/null
+                apt-get install -y -qq $pkg >/dev/null
+            fi
+            ;;
+        centos|redhat)
+            print "installing packages $pkg"
+             #yum check-update -q >/dev/null TODO: fix exit codes
+            yum install -y -q $pkg >/dev/null
+            ;;
     esac
 }
 
@@ -145,6 +172,7 @@ register_user() {
     printf "Please check your Inbox and confirm the link"
 }
 
+# Ping API to check if mail is confirmed
 register_ping() {
     mail="$1"
 
@@ -218,21 +246,11 @@ get_packages
 read -r -p "[1] The following packages and dependencies are going to be installed: $pkg [Y/n]" PACKAGE
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
-        # check if already installed
-        if pkg_exists $pkg; then
-            echo "already installed"
+        # check if package installed, if not install
+        if pkg_install $pkg; then
+            echo "packages $pkg installed"
         else
-            printf "installing packages\n"
-            case "$lsb_dist" in
-                debian|ubuntu)
-                    apt-get update -qq >/dev/null
-                    apt-get install -y -qq $pkg >/dev/null
-                    ;;
-                centos|redhat)
-                    #yum check-update -q >/dev/null TODO: fix exit codes
-                    yum install -y -q $pkg >/dev/null
-                    ;;
-            esac
+            echo "error, please check $pkg installation"
         fi
         ;;
      *)
@@ -247,26 +265,37 @@ case "$PUPPET" in
     [yY][eE][sS]|[yY])
             case "$lsb_dist" in
                 debian|ubuntu)
-                    # check if already installed
+                    # puppet release repo
+                    if pkg_exists puppet5-release; then
+                        printf "puppet5 release repo already installed"
+                    else
+                        curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
+                        dpkg -i puppet5-release-$dist_version.deb
+                    fi
+                    #puppet agent
                     if pkg_exists puppet-agent; then
                         printf "puppet already installed"
                     else
                         printf "start installing puppet\n"
-                        curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
-                        dpkg -i puppet5-release-$dist_version.deb
-                        apt-get update -qq >/dev/null
-                        apt-get install -y -qq puppet-agent >/dev/null
+                        pkg_install puppet-agent
                     fi
                     ;;
                 centos|redhat)
-                    if ! rpm -qa | grep -qw puppet-agent$; then
+                    # puppet release repo
+                    if pkg_exists puppet5-release; then
+                        printf "puppet5 release repo already installed"
+                    else
+                        # install puppet5 repo from url
+                        rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
+                    fi
+                    # puppet agent
+                    if pkg_exists puppet-agent; then
                         printf "puppet already installed"
                     else
                         printf "start installing puppet\n"
-                        rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
-                        yum install -y -q puppet-agent  >/dev/null
+                        pkg_install puppet-agent
                     fi
-                    ,,
+                    ;;
                 esac
         ;;
      *)
