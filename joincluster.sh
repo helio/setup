@@ -310,7 +310,7 @@ case "$start" in
     [yY][eE][sS]|[yY])
         # join cluster with a new server by token
         if [ -z $token ]; then
-            printf "Please enter your token to on-board the node to the cluster.\n"
+            printf "Please enter your token from panel.idling.host to on-board the node to the cluster.\n"
             read -r -p "Your token: " token
         fi
         if join_cluster $token; then
@@ -332,7 +332,7 @@ case "$start" in
 
         # join cluster with a new server by token
         if [ -z $token ]; then
-            printf "Please enter your token to on-board the node to the cluster.\n"
+            printf "Please enter your token from panel.idling.host to on-board the node to the cluster.\n"
             read -r -p "Your token: " token
         fi
         if join_cluster $token; then
@@ -356,6 +356,8 @@ case "$METRICS" in
             centos|rhel)
                 printf "metrics not supported yet" #TODO add rpm in our repo for node exporter
                 ;;
+        esac
+        ;;
      *)
          # no action, contiunue
         ;;
