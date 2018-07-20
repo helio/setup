@@ -32,9 +32,9 @@ esac
 done
 
 # check if one package is installed (loop array)
-pkg_exists()
-    installed=$1
+pkg_exists() {
     lsb_dist=$(get_distribution)
+    installed=$1
     case "$lsb_dist" in
         debian|ubuntu)
             dpkg --get-selections | grep -q "^$installed[[:space:]]*install$" >/dev/null 2>&1
@@ -48,7 +48,7 @@ pkg_exists()
 # install packages, if they not exists
 pkg_install() {
     lsb_dist=$(get_distribution)
-    pkg=$1
+    pkg=$@
     case "$lsb_dist" in
         debian|ubuntu)
             # check if installed
@@ -64,7 +64,7 @@ pkg_install() {
             fi
             ;;
         centos|redhat)
-            print "installing packages $pkg"
+            printf "installing packages $pkg"
              #yum check-update -q >/dev/null TODO: fix exit codes
             yum install -y -q $pkg >/dev/null
             ;;
@@ -345,12 +345,16 @@ esac
 read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
 case "$METRICS" in
     [yY][eE][sS]|[yY])
-        printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from metrics.idling.host / IP: \n"
-        dig +short metrics.idling.host
-        $puppet resource package prometheus-node-exporter ensure=present
-        $puppet resource service prometheus-node-exporter ensure=running enable=true
-        # TODO: exporting resource to puppetdb or ping api?
-        ;;
+        lsb_dist=$(get_distribution)
+        case "$lsb_dist" in
+            debian|ubuntu)
+                printf "downloading prometheus node exporter. running and exposing it on port 9100. Remember to allow access from metrics.idling.host / IP: \n"
+                dig +short metrics.idling.host
+                $puppet resource package prometheus-node-exporter ensure=present
+                $puppet resource service prometheus-node-exporter ensure=running enable=true
+                ;;
+            centos|redhat)
+                printf "metrics not supported yet" #TODO add rpm in our repo for node exporter
      *)
          # no action, contiunue
         ;;
