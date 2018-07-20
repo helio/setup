@@ -39,7 +39,7 @@ pkg_exists() {
         debian|ubuntu)
             dpkg --get-selections | grep -q "^$installed[[:space:]]*install$" >/dev/null 2>&1
         ;;
-        centos|redhat)
+        centos|rhel)
             rpm -qa | grep -q $installed
         ;;
     esac
@@ -56,15 +56,15 @@ pkg_install() {
 
             # install if not
             if installed; then
-                printf "packages already installed, continue"
+                printf "packages already installed, continue\n"
             else
-                print "installing packages $pkg"
+                print "installing packages $pkg\n"
                 apt-get update -qq >/dev/null
                 apt-get install -y -qq $pkg >/dev/null
             fi
             ;;
-        centos|redhat)
-            printf "installing packages $pkg"
+        centos|rhel)
+            printf "installing packages $pkg\n"
              #yum check-update -q >/dev/null TODO: fix exit codes
             yum install -y -q $pkg >/dev/null
             ;;
@@ -124,7 +124,7 @@ get_packages() {
         debian|ubuntu)
             pkg="apt-transport-https ca-certificates curl lsb-release dnsutils jq"
         ;;
-        centos|redhat)
+        centos|rhel)
             pkg="ca-certificates curl redhat-lsb-core epel-release bind-utils jq"
         ;;
     esac
@@ -140,7 +140,7 @@ join_cluster() {
 
     # get jwt for csr attributes
     if file_exists $csr_attributes; then
-        printf "$csr_attributes already exists. please delete"
+        printf "$csr_attributes already exists. please delete\n"
     else
         csrtoken=$(curl_response $json $join |jq -r '.token')
         printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
@@ -153,7 +153,7 @@ join_cluster() {
         $puppet config set srv_domain idling.host
         $puppet config set environment setupscript --section agent
     else
-        printf "puppet binary doesnt exists, please check package installation"
+        printf "puppet binary doesnt exists, please check package installation\n"
     fi
 }
 
@@ -169,7 +169,7 @@ register_user() {
 
     # register user
     curl_response $json $register
-    printf "Please check your Inbox and confirm the link"
+    printf "Please check your Inbox and confirm the link\n"
 }
 
 # Ping API to check if mail is confirmed
@@ -206,7 +206,7 @@ if command_exists lsb_release; then
         debian|ubuntu)
             dist_version="$(lsb_release -cs)"
         ;;
-        centos)
+        centos|rhel)
             dist_version="$(lsb_release -rs|cut -c1)"
         ;;
     esac
@@ -216,7 +216,7 @@ fi
 read -r -p "[0] Checking for conflicts [Y/n]" CHECK
 case "$CHECK" in
     [yY][eE][sS]|[yY])
-        msg="WARNING: puppet is already installed, only continue if it's OK to overwrite settings \n"
+        msg="WARNING: puppet is already installed, only continue if it's OK to overwrite settings\n"
         if command_exists puppet; then
             printf "$msg"
         fi
@@ -230,7 +230,7 @@ case "$CHECK" in
             elif command_exists su; then
                 sh_c='su -c'
             else
-		    	printf "Error: this installer needs the ability to run commands as root. We are unable to find either "sudo" or "su" available to make this happen."
+		    	printf "Error: this installer needs the ability to run commands as root. We are unable to find either "sudo" or "su" available to make this happen.\n"
 			    exit 1
             fi
         fi
@@ -267,30 +267,30 @@ case "$PUPPET" in
                 debian|ubuntu)
                     # puppet release repo
                     if pkg_exists puppet5-release; then
-                        printf "puppet5 release repo already installed"
+                        printf "puppet5 release repo already installed\n"
                     else
                         curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
                         dpkg -i puppet5-release-$dist_version.deb
                     fi
                     #puppet agent
                     if pkg_exists puppet-agent; then
-                        printf "puppet already installed"
+                        printf "puppet already installed\n"
                     else
                         printf "start installing puppet\n"
                         pkg_install puppet-agent
                     fi
                     ;;
-                centos|redhat)
+                centos|rhel)
                     # puppet release repo
                     if pkg_exists puppet5-release; then
-                        printf "puppet5 release repo already installed"
+                        printf "puppet5 release repo already installed\n"
                     else
                         # install puppet5 repo from url
                         rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
                     fi
                     # puppet agent
                     if pkg_exists puppet-agent; then
-                        printf "puppet already installed"
+                        printf "puppet already installed\n"
                     else
                         printf "start installing puppet\n"
                         pkg_install puppet-agent
@@ -353,8 +353,9 @@ case "$METRICS" in
                 $puppet resource package prometheus-node-exporter ensure=present
                 $puppet resource service prometheus-node-exporter ensure=running enable=true
                 ;;
-            centos|redhat)
+            centos|rhel)
                 printf "metrics not supported yet" #TODO add rpm in our repo for node exporter
+                ;;
      *)
          # no action, contiunue
         ;;
