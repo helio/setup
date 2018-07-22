@@ -198,7 +198,7 @@ register_ping() {
 lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
 
-# Release versiion
+# Release version
 dist_version() {
     if command_exists lsb_release; then
         case "$lsb_dist" in
@@ -260,7 +260,7 @@ case "$PACKAGE" in
 esac
 
 # install puppet agent based os release
-dist_version()
+dist_version
 read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
