@@ -52,10 +52,7 @@ pkg_install() {
     case "$lsb_dist" in
         debian|ubuntu)
             # check if installed
-            installed=$(dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null 2>&1)
-
-            # install if not
-            if installed; then
+            if installed=$(dpkg --get-selections | grep -q "^$pkg[[:space:]]*install$" >/dev/null 2>&1); then
                 printf "packages already installed, continue\n"
             else
                 printf "installing packages $pkg\n"
