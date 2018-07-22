@@ -58,7 +58,7 @@ pkg_install() {
             if installed; then
                 printf "packages already installed, continue\n"
             else
-                print "installing packages $pkg\n"
+                printf "installing packages $pkg\n"
                 apt-get update -qq >/dev/null
                 apt-get install -y -qq $pkg >/dev/null
             fi
@@ -141,6 +141,7 @@ join_cluster() {
     # get jwt for csr attributes
     if file_exists $csr_attributes; then
         printf "$csr_attributes already exists. please delete\n"
+        #TODO ask for removal and continue
     else
         csrtoken=$(curl_response $json $join |jq -r '.token')
         printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
@@ -200,17 +201,19 @@ register_ping() {
 lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
 
-# Release version
-if command_exists lsb_release; then
-    case "$lsb_dist" in
-        debian|ubuntu)
-            dist_version="$(lsb_release -cs)"
-        ;;
-        centos|rhel)
-            dist_version="$(lsb_release -rs|cut -c1)"
-        ;;
-    esac
-fi
+# Release versiion
+dist_version() {
+    if command_exists lsb_release; then
+        case "$lsb_dist" in
+            debian|ubuntu)
+                dist_version="$(lsb_release -cs)"
+                ;;
+            centos|rhel)
+                dist_version="$(lsb_release -rs|cut -c1)"
+                ;;
+        esac
+    fi
+}
 
 # check for conflics
 read -r -p "[0] Checking for conflicts [Y/n]" CHECK
@@ -260,6 +263,7 @@ case "$PACKAGE" in
 esac
 
 # install puppet agent based os release
+dist_version()
 read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
@@ -274,9 +278,9 @@ case "$PUPPET" in
                     fi
                     #puppet agent
                     if pkg_exists puppet-agent; then
-                        printf "puppet already installed\n"
+                        printf "puppet agent already installed\n"
                     else
-                        printf "start installing puppet\n"
+                        printf "start installing puppet agent\n"
                         pkg_install puppet-agent
                     fi
                     ;;
@@ -290,9 +294,9 @@ case "$PUPPET" in
                     fi
                     # puppet agent
                     if pkg_exists puppet-agent; then
-                        printf "puppet already installed\n"
+                        printf "puppet agent already installed\n"
                     else
-                        printf "start installing puppet\n"
+                        printf "start installing puppet agent\n"
                         pkg_install puppet-agent
                     fi
                     ;;
@@ -354,7 +358,7 @@ case "$METRICS" in
                 $puppet resource service prometheus-node-exporter ensure=running enable=true
                 ;;
             centos|rhel)
-                printf "metrics not supported yet" #TODO add rpm in our repo for node exporter
+                printf "metrics not supported yet\n" #TODO add rpm in our repo for node exporter
                 ;;
         esac
         ;;
