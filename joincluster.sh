@@ -7,8 +7,11 @@ set -e
 #
 # install script to join our cluster
 
+# TODO: script SHA, changed during upload / deploy
+SCRIPT_COMMIT_SHA=321120a4347749dc9348b0db4039fec327dff651
+
 # api endpoints
-base="https://panel.idling.host/"
+base="https://panel.idling.host"
 register="$base/server/init"
 register_ping="$base/server/init"
 gettoken="$base/server/gettoken"
@@ -370,7 +373,22 @@ printf "[5] How should the computing be deployed onto your node? \n"
 read -r -p "Choose 0 [Docker] 1 [Kubernetes] 2 [Service] 9 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [0])
+        # check for docker installation source script: https://get.docker.com/
+        if command_exists docker; then
+        cat >&2 <<-'EOF'
+        Warning: the "docker" command appears to already exist on this system.
+
+		If you already have Docker installed, this script can cause trouble, which is
+	    why we're displaying this warning and provide the opportunity to cancel the
+		installation.
+
+	    You may press Ctrl+C now to abort this script.
+		EOF
+        ( set -x; sleep 20 )
+        fi
+
         echo "Going to install Docker"
+
         $puppet agent -t && $puppet agent -t
         ;;
     [1])
