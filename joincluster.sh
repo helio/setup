@@ -9,7 +9,6 @@ set -e
 
 # TODO: script SHA, changed during upload / deploy
 SCRIPT_COMMIT_SHA=321120a4347749dc9348b0db4039fec327dff651
-
 # api endpoints
 base="https://panel.idling.host"
 register="$base/server/init"
@@ -33,6 +32,9 @@ case "${option}" in
     m) mail=${OPTARG};;
 esac
 done
+
+# set env var for puppet
+export LC_ALL=C
 
 # check if one package is installed (loop array)
 pkg_exists() {
