@@ -23,7 +23,7 @@ puppetbin="/opt/puppetlabs/puppet/bin/"
 
 # files
 csr_attributes="$puppetpath/csr_attributes.yaml"
-puppet="$puppetbin/puppet"
+puppet="LANG=C LC_ALL=C $puppetbin/puppet"
 
 # pass options to the script
 while getopts t:m: option
