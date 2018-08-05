@@ -9,6 +9,7 @@ set -e
 
 # TODO: script SHA, changed during upload / deploy
 SCRIPT_COMMIT_SHA=321120a4347749dc9348b0db4039fec327dff651
+
 # api endpoints
 base="https://panel.idling.host"
 register="$base/server/init"
@@ -24,6 +25,7 @@ facter="/etc/facter/facts.d/"
 # files
 csr_attributes="$puppetpath/csr_attributes.yaml"
 puppet="$puppetbin/puppet"
+user_json="$facter/user.json"
 
 # pass options to the script
 while getopts t:m: option
@@ -165,17 +167,17 @@ join_cluster() {
         esac
     fi
 
+    # get response and write csr token
     response=$(curl_response $json $join)
     csrtoken=$(echo "$response"|jq -r '.token' 2> /dev/null)
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
 
-    # write response data userid and serverid into json
-    # and parse it with puppet facter
+    # write response data userid and serverid into json for facter
     if dir_exists $facter; then
-        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $facter/user.json
+        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $user_json
     else
         mkdir -p $facter
-        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $facter/user.json
+        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $user_json
     fi
 
     # configure puppet
