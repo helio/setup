@@ -19,6 +19,7 @@ join="$base/server/register"
 # directories
 puppetpath="/etc/puppetlabs/puppet"
 puppetbin="/opt/puppetlabs/puppet/bin/"
+facter="/etc/facter/facts.d/"
 
 # files
 csr_attributes="$puppetpath/csr_attributes.yaml"
@@ -88,6 +89,16 @@ file_exists() {
     fi
 }
 
+# check if file exists
+dir_exists() {
+    if [ -d "$1" ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # run curl with json data ($1) and target url ($2) and get http status
 curl_status() {
     json="$1"
@@ -142,12 +153,21 @@ join_cluster() {
 
     # get jwt for csr attributes
     if file_exists $csr_attributes; then
-        printf "$csr_attributes already exists. please delete\n"
-        #TODO ask for removal and continue
-    else
-        csrtoken=$(curl_response $json $join |jq -r '.token')
-        printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
+        read -p "File $csr_attributes exists. Do you want to delete? [y/n] " delete
+        if [[ $delete == [yY] ]]; then
+            rm $csr_attributes
+        else
+            printf "need to cleanup, please remove $csr_attributes  manually and start again"
+            exit 1
+        fi
     fi
+    response=$(curl_response $json $join)
+    csrtoken=$(jq -r '.token' <<< "$response")
+    printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
+
+    # write response data userid and serverid into json
+    # and parse it with puppet facter
+    echo "$response" | jq '.user_id,.server_id' -M > $facter/user.json
 
     # configure puppet
     if file_exists $puppet; then
@@ -198,7 +218,7 @@ register_ping() {
    done
 }
 
-# Platform detection
+## Platform detection
 # Distribution
 lsb_dist=$(get_distribution)
 lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
@@ -389,7 +409,7 @@ case "$WORKLOAD" in
         ( set -x; sleep 20 )
         fi
 
-        echo "Going to install Docker"
+        echo "Going to install Docker. Setup takes up to 5minutes"
 
         $puppet agent -t && $puppet agent -t
         ;;
