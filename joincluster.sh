@@ -166,16 +166,16 @@ join_cluster() {
     fi
 
     response=$(curl_response $json $join)
-    csrtoken=$(echo '"$response"'|jq -r '.token')
+    csrtoken=$(echo "$response"|jq -r '.token' 2> /dev/null)
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
 
     # write response data userid and serverid into json
     # and parse it with puppet facter
     if dir_exists $facter; then
-        echo '"$response"' | jq '.user_id,.server_id' -M > $facter/user.json
+        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $facter/user.json
     else
         mkdir -p $facter
-        echo '"$response"' | jq '.user_id,.server_id' -M > $facter/user.json
+        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $facter/user.json
     fi
 
     # configure puppet
