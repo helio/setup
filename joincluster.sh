@@ -154,13 +154,17 @@ join_cluster() {
     # get jwt for csr attributes
     if file_exists $csr_attributes; then
         read -p "File $csr_attributes exists. Do you want to delete? [y/n] " delete
-        if [[ $delete == [yY] ]]; then
-            rm $csr_attributes
-        else
-            printf "need to cleanup, please remove $csr_attributes  manually and start again"
-            exit 1
-        fi
+        case "$delete" in
+            [yY][eE][sS]|[yY])
+                rm $csr_attributes
+                ;;
+            *)
+                printf "need to cleanup, please remove $csr_attributes  manually and start again"
+                exit 1
+                ;;
+        esac
     fi
+
     response=$(curl_response $json $join)
     csrtoken=$(echo '"$response"'|jq -r '.token')
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
