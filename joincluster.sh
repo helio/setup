@@ -174,10 +174,10 @@ join_cluster() {
 
     # write response data userid and serverid into json for facter
     if dir_exists $facter; then
-        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $user_json
+        echo "$response"|jq '.[] | {user_id: .user_id, server_id: .server_id}' -M 2> /dev/null > $user_json
     else
         mkdir -p $facter
-        echo "$response"|jq '.user_id,.server_id' -M 2> /dev/null > $user_json
+        echo "$response"|jq '.[] | {user_id: .user_id, server_id: .server_id}' -M 2> /dev/null > $user_json
     fi
 
     # configure puppet
