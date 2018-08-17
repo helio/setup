@@ -8,6 +8,12 @@ if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-comp
     ./start-computing.sh
 fi
 ```
+## Introduction
+
+This `/bin/sh` helps you to join idling.host as a supplier, prepares your system and make the computing power available on our market.
+You can watch your metrics and stop / start the computing always on panel.idling.host.
+There you also see how much money you've earned and the CO2 emissions you've saved.
+
 
 ## Supported OS
 
@@ -42,7 +48,7 @@ fi
 | puppet-agent             | create certificate, sign it from our CA, secure connections, system provisioning layer | all |
 | prometheus-node-exporter | collect system metrics and expose them on port 9100                                    | all |
 
-#### Choria
+## Choria
 
 The choria go binary Connects your node to our broker, to receive tasks and orchestrate workloads.
 The communication is fully secured by TLS, including user authentification.
@@ -75,5 +81,5 @@ This includes incoming pakets / answers for established connections.
 | :---------------------- |:------------ | :----------- |
 | broker.idling.host:4222 | TCP          | get tasks from our broker |
 | wildcard:7964           | TCP and UDP  | communication between our swarm nodes |
-| wildcard:4789           | UDP          | communication between swarm nodes |
-| wildcard:50             | custom (ESP) | encrypt traffic |
+| wildcard:4789           | UDP          | overlay network|
+| wildcard:50             | custom (ESP) | encrypt overlay traffic |
