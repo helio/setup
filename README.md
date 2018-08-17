@@ -11,8 +11,8 @@ fi
 
 ## Supported OS
 
-| OS            | Version       |
-| ------------- |:-------------:|
+| OS            | Version         |
+| ------------- |:----------------|
 | Debian        | Jessie, Stretch |
 | Ubuntu        | >= 16.04 LTS    |
 | RHEL          | 6x, 7x          |
@@ -22,15 +22,15 @@ fi
 
 ### official OS packages
 
-| Package       | usage         | OS         |
-| ------------- |:-------------:|----------- |
-| ca-certificates | validate TLS connections             | all |
-| curl            | download scrip, communicate with API | all |
+| Package         | usage                                | OS              |
+| --------------- |:-------------------------------------|:--------------- |
+| ca-certificates | validate TLS connections             | all             |
+| curl            | download scrip, communicate with API | all             |
 | dnsutils        | to dig the prometheus.idling.host ip | Debian & Ubuntu |
-| epel-release    | repository                           | RHEL, CentOS |
-| jq              | lightweight parser for json          | all |
+| epel-release    | repository                           | RHEL, CentOS    |
+| jq              | lightweight parser for json          | all             |
 | lsb-release     | resolve OS, version                  | Debian & Ubuntu |
-| redhat-lsb-core | resolve OS, versio                   | RHEL, CentOS |
+| redhat-lsb-core | resolve OS, versio                   | RHEL, CentOS    |
 
 
 ### 3rd party modules
@@ -63,17 +63,17 @@ For a functional setup, the following protocols and connections should be allowe
 
 ### Incoming
 
-| Host  / Port  | usage         |
-| ------------- |:-------------:|
+| Host  / Port                | usage                                                |
+| :-------------------------- |:---------------------------------------------------- |
 | prometheus.idling.host:9100 | allow Prometheus to collect metrics from your server |
 
 ### Outgoing
 
 This includes incoming pakets / answers for established connections.
 
-| Host  / Port  | protocol | usage         |
-| ------------- |:-------------:|
-| broker.idling.host:4222 | TCP | get tasks from our broker |
-| wildcard:7964 | TCP and UDP | communication between our swarm nodes |
-| wildcard:4789 | UDP | communication between swarm nodes |
-| wildcard:50 | custom (ESP) | encrypt traffic |
+| Host  / Port            | protocol     | usage        |
+| :---------------------- |:------------ | :----------- |
+| broker.idling.host:4222 | TCP          | get tasks from our broker |
+| wildcard:7964           | TCP and UDP  | communication between our swarm nodes |
+| wildcard:4789           | UDP          | communication between swarm nodes |
+| wildcard:50             | custom (ESP) | encrypt traffic |
