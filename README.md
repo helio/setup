@@ -35,12 +35,12 @@ fi
 
 ### 3rd party modules
 
-| Package       | usage         | OS         |
-| ------------- |:-------------:|----------- |
-| choria | push commands from our scheduler | all |
-| docker-ce | join our swarm, get computation tasks | all |
-| puppet-agent  | create certificate, sign it from our CA, secure connections, system provisioning layer | all |
-| prometheus-node-exporter | collect system metrics and expose them on port 9100 | all |
+| Package                  | usage                                                                                  | OS  |
+| -------------------------|:--------------------------------------------------------------------------------------:|-----|
+| choria                   | push commands from our scheduler                                                       | all |
+| docker-ce                | join our swarm, get computation tasks                                                  | all |
+| puppet-agent             | create certificate, sign it from our CA, secure connections, system provisioning layer | all |
+| prometheus-node-exporter | collect system metrics and expose them on port 9100                                    | all |
 
 #### Choria
 
