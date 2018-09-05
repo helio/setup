@@ -5,7 +5,7 @@
 ```shell
 curl -fsSL un.idling.host -o start-computing.sh
 if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-computing.sh'); then
-    ./start-computing.sh
+    sh start-computing.sh
 fi
 ```
 ## Introduction
