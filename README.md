@@ -11,8 +11,8 @@ fi
 ## Introduction
 
 This `/bin/sh` helps you to join idling.host as a supplier, prepares your system and make the computing power available on our market.
-You can watch your metrics and stop / start the computing always on panel.idling.host.
-There you also see how much money you've earned and the CO2 emissions you've saved.
+You can watch your metrics and stop / start the computing always on [panel.idling.host](https://panel.idling.host)
+In the future, you'll also see there how much money you've earned and the CO2 emissions you've saved.
 
 
 ## Supported OS
@@ -48,9 +48,18 @@ There you also see how much money you've earned and the CO2 emissions you've sav
 | puppet-agent             | create certificate, sign it from our CA, secure connections, system provisioning layer | all |
 | prometheus-node-exporter | collect system metrics and expose them on port 9100                                    | all |
 
+## Puppet Agent
+
+This script is installing and configuring the `puppet-agent` from [Puppetlabs](https://github.com/puppetlabs/puppet).
+The agent is used to create your clients certificate and let it sign from our certificate authority.
+Your node is assigned to your account, secured by an additional certificate siging request (CSR) based on a unique JWT. 
+
+** important: ** if your node is already puppet for another reason, please contact our support first.
+
+
 ## Choria
 
-The choria go binary Connects your node to our broker, to receive tasks and orchestrate workloads.
+The choria go binary connects your node to our broker, to receive tasks and orchestrate the workloads.
 The communication is fully secured by TLS, including user authentification.
 We provision your node and make the following tasks available for our broker / backend:
 
@@ -62,7 +71,27 @@ The choria server is only pulling the information from our broker and pushes the
 You can always stop / remove the service and disable our access to the mention functions:
 
 `service choria stop`
+
 `apt-get remove choria`
+
+## Docker CE worker
+
+Ilding host is using [Docker](https://docker.com) to bring our customers workloads to your node.
+This script will install and configure Docker, to work with our Docker Swarm.
+Your node will act as Docker worker and will get computing jobs, managed by our Swarm manager nodes.
+It will also create an encrypted network, to communicate with other Swarm nodes.
+
+
+## Kubernetes worker
+
+Additional Kubernetes support will follow soon. Stay tuned.
+
+## Prometheus
+
+Our system is collecting metrics from your system and store them on our [Prometheus](https://prometheus.io) cluster.
+We need those metrics, to bring computing tasks to your system, when it's save to do.
+The metrics are also needed to calculate your contribution to our platform.
+You'll be able to monitor those metrics in our [panel.idling.host](https://panel.idling.host). Yay, free monitoring.
 
 ## Firewall
 For a functional setup, the following protocols and connections should be allowed to your node(s).
