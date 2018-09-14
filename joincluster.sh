@@ -24,8 +24,14 @@ facter="/etc/facter/facts.d/"
 
 # files
 csr_attributes="$puppetpath/csr_attributes.yaml"
+ssl_dir="$puppetpath/ssl/"
+certificates="$ssl_dir/private_keys"
 puppet="$puppetbin/puppet"
 user_json="$facter/user.json"
+
+# support
+$mail="support@idling.host"
+$exit="Can not proceed, please contact our support at $mail or run again. Exiting..."
 
 # pass options to the script
 while getopts t:m: option
@@ -91,7 +97,7 @@ file_exists() {
     fi
 }
 
-# check if file exists
+# check if directory exists
 dir_exists() {
     if [ -d "$1" ]
     then
@@ -290,7 +296,7 @@ case "$PACKAGE" in
         fi
         ;;
      *)
-        printf "Can't continue. Exiting"
+        printf "$exit"
         exit 1;
         ;;
 esac
@@ -333,10 +339,33 @@ case "$PUPPET" in
                         pkg_install puppet-agent
                     fi
                     ;;
+            esac
+            # check if certificates already exist
+            if find_files $certificates; then
+                read -p "Puppet private keys already exists on your system. Do you already use puppet for other things? [y/n] " ask
+                case "$ask" in
+                    [yY][eE][sS]|[yY])
+                        printf "Please contact our support at $mail. Exiting..."
+                        exit 1
+                        ;;
+                    *)
+                        read -p "The directory $ssl_dir exists - probably from previews script runs. Do you want to delete it? [y/n] " delete
+                        case "$delete" in
+                            [yY][eE][sS]|[yY])
+                                rm -ir $ssl_dir
+                                printf "Probably you need to remove your server from panel.idling.host first, to create a new CSR"
+                                ;;
+                            *)
+                                printf "$exit"
+                                exit 1
+                                ;;
+                        esac
+                        ;;
                 esac
-        ;;
-     *)
-        printf "Can't continue. Exiting"
+            fi
+        *)
+        # dont proceed with puppet, exit
+        printf "$exit"
         exit 1;
         ;;
 esac
@@ -373,7 +402,7 @@ case "$start" in
             read -r -p "Your token: " token
         fi
         if join_cluster $token; then
-            printf "Cluster joined"
+            printf "Cluster joined.\n"
         fi
         ;;
 esac
