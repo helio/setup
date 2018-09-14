@@ -30,8 +30,8 @@ puppet="$puppetbin/puppet"
 user_json="$facter/user.json"
 
 # support
-$mail="support@idling.host"
-$exit="Can not proceed, please contact our support at $mail or run again. Exiting..."
+mail="support@idling.host"
+exit="Can not proceed, please contact our support at $mail or run again. Exiting..."
 
 # pass options to the script
 while getopts t:m: option
@@ -105,6 +105,11 @@ dir_exists() {
     else
         return 1
     fi
+}
+
+# find files in a dir
+find_files() {
+    find $1 -type f
 }
 
 # run curl with json data ($1) and target url ($2) and get http status
@@ -363,12 +368,13 @@ case "$PUPPET" in
                         ;;
                 esac
             fi
+            ;;
         *)
-        # dont proceed with puppet, exit
-        printf "$exit"
-        exit 1;
-        ;;
-esac
+            # dont proceed with puppet, exit
+            printf "$exit"
+            exit 1;
+            ;;
+    esac
 
 # new user or new server?
 read -r -p "[3] Do you already have an account at idling.host? [Y/n]" start
