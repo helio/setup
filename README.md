@@ -8,12 +8,26 @@ if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-comp
     sh start-computing.sh
 fi
 ```
+
+`start-computing.sh` options: 
+ * -m yourmail
+ * -t servertoken 
+
+
 ## Introduction
 
-This `/bin/sh` helps you to join idling.host as a supplier, prepares your system and make the computing power available on our market.
-You can watch your metrics and stop / start the computing always on [panel.idling.host](https://panel.idling.host)
-In the future, you'll also see there how much money you've earned and the CO2 emissions you've saved.
+This `/bin/sh` automates the process of joining the idling.host platform. It prepares your system and makes the computing power available on our market.
+You can watch the metrics and stop / start the computing always on [panel.idling.host](https://panel.idling.host)
 
+Outlook: In the future, you can also track e.g. how much money you've earned and the CO2 emissions you've saved.
+
+## Setup steps
+
+You need to create an account for our platform. It's possible to create an account during script execution or on our website [panel.idling.host](https://panel.idling.host).
+*Pro mode: Use -m yourmail@domain.com during script execution and confirm the welcome mail in your mailbox*
+
+Every server needs to be verified and assigned to your account by a token. You can create a token by adding your servername within the suppliers area. 
+*Pro mode: Use -t token during script execution* 
 
 ## Supported OS
 
@@ -52,9 +66,9 @@ In the future, you'll also see there how much money you've earned and the CO2 em
 
 This script is installing and configuring the `puppet-agent` from [Puppetlabs](https://github.com/puppetlabs/puppet).
 The agent is used to create your clients certificate and let it sign from our certificate authority.
-Your node is assigned to your account, secured by an additional certificate siging request (CSR) based on a unique JWT. 
+Your node is assigned to your account, secured by an additional certificate siging request (CSR) based on an unique JWT. 
 
-** important: ** if your node is already puppet for another reason, please contact our support first.
+**important:** if your node is already puppet for another reason, please contact our support first.
 
 
 ## Choria
@@ -65,7 +79,6 @@ We provision your node and make the following tasks available for our broker / b
 
 * facts (get system information)
 * docker swarm: join, leave
-* TBD
 
 The choria server is only pulling the information from our broker and pushes the answer / output of the task.
 You can always stop / remove the service and disable our access to the mention functions:
