@@ -45,7 +45,7 @@ Every server needs to be verified and assigned to your account by a token. You c
 | Package         | usage                                | OS              |
 | --------------- |:-------------------------------------|:--------------- |
 | ca-certificates | validate TLS connections             | all             |
-| curl            | download scrip, communicate with API | all             |
+| curl            | download script, communicate with API| all             |
 | dnsutils        | to dig the prometheus.idling.host ip | Debian & Ubuntu |
 | epel-release    | repository                           | RHEL, CentOS    |
 | jq              | lightweight parser for json          | all             |
