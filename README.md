@@ -10,9 +10,20 @@ fi
 ```
 
 `start-computing.sh` options: 
- * -m yourmail
- * -t servertoken 
+ * -m $yourmail
+ * -t $servertoken
+ * -v on
+ * -a on
 
+### Example for autojoining:
+Requires an existing account and a token.
+
+```shell
+curl -fsSL un.idling.host -o start-computing.sh
+if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-computing.sh'); then
+    sh start-computing.sh -t 6b4123cb:f33b1a4b1c22d7ac9dab0ab759a38584d0d2506b -a on
+fi
+```
 
 ## Introduction
 

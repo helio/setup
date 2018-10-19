@@ -5,7 +5,7 @@ set -e
 #   $ curl -fsSL un.idling.host -o start-computing.sh
 #   $ sh start-computing.sh
 #
-# install script to join our cluster
+# install script to join the Helio Cloud
 
 # TODO: script SHA, changed during upload / deploy
 SCRIPT_COMMIT_SHA=321120a4347749dc9348b0db4039fec327dff651
@@ -19,29 +19,42 @@ join="$base/server/register"
 
 # directories
 puppetpath="/etc/puppetlabs/puppet"
-puppetbin="/opt/puppetlabs/puppet/bin/"
+puppetbin="/opt/puppetlabs/puppet/bin"
 facter="/etc/facter/facts.d/"
 
 # files
 csr_attributes="$puppetpath/csr_attributes.yaml"
-ssl_dir="$puppetpath/ssl/"
+ssl_dir="$puppetpath/ssl"
 certificates="$ssl_dir/private_keys"
 puppet="$puppetbin/puppet"
 user_json="$facter/user.json"
 
 # support
-mail="support@idling.host"
+mail="support@helio.exchange"
 exit="Can not proceed, please contact our support at $mail or run again. Exiting..."
 
 # pass options to the script
-while getopts t:m:v: option
+while getopts t:m:v:m: option
 do
 case "${option}" in
     t) token=${OPTARG};;
     m) mail=${OPTARG};;
-    v) verbose=true;;
+    v) verbose=1;;
+    m) auto=1;;
+    h) help=1;;
+    \?)
+        echo "Invalid option: -$OPTARG" >&2
+        exit 1
+        ;;
+    :)
+        echo "Option -$OPTARG requires an argument." >&2
+        exit 1
+        ;;
 esac
 done
+
+# show help
+# TODO
 
 # set env var for puppet
 export LC_ALL=C
@@ -110,7 +123,7 @@ dir_exists() {
 
 # find files in a dir
 find_files() {
-    find $1 -type f
+    find $1 -type f | grep -v "No such file or directory"
 }
 
 # run curl with json data ($1) and target url ($2) and get http status
@@ -157,8 +170,8 @@ get_packages() {
     esac
 }
 
-# join new server to users cluster
-join_cluster() {
+# join new server / nodes to the Cloud
+join_helio() {
     token="$@"
     # get hostname
     fqdn=$(get_fqdn)
@@ -260,8 +273,14 @@ dist_version() {
     fi
 }
 
+# auto mode enabled?
+if [ -z "$auto" ]; then
+    read -r -p "[0] Checking for conflicts [Y/n]" CHECK
+else
+    CHECK=y
+fi
+
 # check for conflicts
-read -r -p "[0] Checking for conflicts [Y/n]" CHECK
 case "$CHECK" in
     [yY][eE][sS]|[yY])
         msg="WARNING: puppet is already installed, only continue if it's OK to overwrite settings\n"
@@ -289,9 +308,15 @@ case "$CHECK" in
 esac
 
 
-# install required packages
+# auto mode enabled?
 get_packages
-read -r -p "[1] The following packages and dependencies are going to be installed: $pkg [Y/n]" PACKAGE
+if [ -z "$auto" ]; then
+    read -r -p "[1] The following packages and dependencies are going to be installed: $pkg [Y/n]" PACKAGE
+else
+    PACKAGE=y
+fi
+
+# install required packages
 case "$PACKAGE" in
     [yY][eE][sS]|[yY])
         # check if package installed, if not install
@@ -307,9 +332,15 @@ case "$PACKAGE" in
         ;;
 esac
 
+# auto mode enabled?
+if [ -z "$auto" ]; then
+    read -r -p "[2] To automate the on-boarding process to the platform, the puppet agent will be installed? [Y/n]" PUPPET
+else
+    PUPPET=y
+fi
+
 # install puppet agent based os release
 dist_version
-read -r -p "[2] To automate the on-boarding process to the platform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
             case "$lsb_dist" in
@@ -318,14 +349,19 @@ case "$PUPPET" in
                     if pkg_exists puppet5-release; then
                         printf "puppet5 release repo already installed\n"
                     else
-                        curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
-                        dpkg -i puppet5-release-$dist_version.deb
+                        if [ -z "$verbose" ]; then
+                            curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
+                            dpkg -i puppet5-release-$dist_version.deb &>/dev/null
+                        else
+                            curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
+                            dpkg -i puppet5-release-$dist_version.deb
+                        fi
+
                     fi
                     #puppet agent
                     if pkg_exists puppet-agent; then
                         printf "puppet agent already installed\n"
                     else
-                        printf "start installing puppet agent\n"
                         pkg_install puppet-agent
                     fi
                     ;;
@@ -341,7 +377,6 @@ case "$PUPPET" in
                     if pkg_exists puppet-agent; then
                         printf "puppet agent already installed\n"
                     else
-                        printf "start installing puppet agent\n"
                         pkg_install puppet-agent
                     fi
                     ;;
@@ -377,17 +412,24 @@ case "$PUPPET" in
             ;;
     esac
 
+
+# auto mode enabled?
+if [ -z "$auto" ]; then
+    read -r -p "[3] Do you already have an account at idling.host? [Y/n]" START
+else
+    START=y
+fi
+
 # new user or new server?
-read -r -p "[3] Do you already have an account at idling.host? [Y/n]" start
-case "$start" in
+case "$START" in
     [yY][eE][sS]|[yY])
-        # join cluster with a new server by token
+        # join Helio with a new server by token
         if [ -z $token ]; then
-            printf "Please enter your token from panel.idling.host to on-board the node to the cluster.\n"
+            printf "Please enter your token from panel.idling.host to on-board the node to the Helio Cloud.\n"
             read -r -p "Your token: " token
         fi
-        if join_cluster $token; then
-            printf "Cluster joined"
+        if join_helio $token; then
+            printf "Node verified and authenticated.\n"
         fi
         ;;
     *)
@@ -403,19 +445,25 @@ case "$start" in
         # check if mail is confirmed
         uid=$(register_ping $mail)
 
-        # join cluster with a new server by token
+        # join Helio with a new server by token
         if [ -z $token ]; then
-            printf "Please enter your token from panel.idling.host to on-board the node to the cluster.\n"
+            printf "Please enter your token from panel.idling.host to on-board the node to the Helio Cloud.\n"
             read -r -p "Your token: " token
         fi
-        if join_cluster $token; then
-            printf "Cluster joined.\n"
+        if join_helio $token; then
+            printf "Node verified and authenticated.\n"
         fi
         ;;
 esac
 
+# auto mode enabled?
+if [ -z "$auto" ]; then
+    read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
+else
+    METRICS=y
+fi
+
 # Export metrics to our backend
-read -r -p "[4] Expose system metrics to the plattform for scheduling workloads responsibly? [Y/n]" METRICS
 case "$METRICS" in
     [yY][eE][sS]|[yY])
         lsb_dist=$(get_distribution)
@@ -437,9 +485,16 @@ case "$METRICS" in
 esac
 
 
+# auto mode enabled?
+# use Docker as default. TODO improve later
+if [ -z "$auto" ]; then
+    printf "[5] How should the computing be deployed onto your node? \n"
+    read -r -p "Choose 0 [Docker] 1 [Kubernetes] 2 [Service] 9 [Stop]" WORKLOAD
+else
+    WORKLOAD=0
+fi
+
 # Choose workload type (docker, pure binary)
-printf "[5] How should the computing be deployed onto your node? \n"
-read -r -p "Choose 0 [Docker] 1 [Kubernetes] 2 [Service] 9 [Stop]" WORKLOAD
 case "$WORKLOAD" in
     [0])
         # check for docker installation source script: https://get.docker.com/
@@ -456,20 +511,21 @@ case "$WORKLOAD" in
         ( set -x; sleep 20 )
         fi
 
-        echo "Going to install Docker. Setup takes up to 5 minutes. Stay tuned "
 
         # run puppet
-        if $verbose ; then
-            $puppet agent -t && $puppet agent -t
-        else
+        if [ -z "$verbose" ]; then
+            printf "Joining the Helio Cloud and configure system. Setup takes up to 5 minutes. Stay tuned. \n"
             $puppet agent && $puppet agent
+        else
+            printf "Joining the Helio Cloud and configure system in the background. Setup takes up to 5 minutes. Stay tuned. \n"
+            $puppet agent -t && $puppet agent -t
         fi
         ;;
     [1])
-        echo "Option not available yet. Please choose Docker."
+        echo "Option not available yet. Please choose Docker.\n"
         ;;
     [2])
-        echo "Option not available yet. Please choose Docker."
+        echo "Option not available yet. Please choose Docker.\n"
         ;;
     *)
         printf "ok, bye ;-( \n"
@@ -477,7 +533,7 @@ case "$WORKLOAD" in
  esac
 
 # Run complete
-printf "[6] Script run complete. Check panel.idling.host for success \n"
+printf "[6] Script run complete. Check panel.idling.host later for node status and success. Thanks\n"
 # TODO: create /api/status and check setup status
 
 # Run workload and earn money $$$
