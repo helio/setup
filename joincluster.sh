@@ -34,11 +34,12 @@ mail="support@idling.host"
 exit="Can not proceed, please contact our support at $mail or run again. Exiting..."
 
 # pass options to the script
-while getopts t:m: option
+while getopts t:m:v: option
 do
 case "${option}" in
     t) token=${OPTARG};;
     m) mail=${OPTARG};;
+    v) verbose=true;;
 esac
 done
 
@@ -259,7 +260,7 @@ dist_version() {
     fi
 }
 
-# check for conflics
+# check for conflicts
 read -r -p "[0] Checking for conflicts [Y/n]" CHECK
 case "$CHECK" in
     [yY][eE][sS]|[yY])
@@ -308,7 +309,7 @@ esac
 
 # install puppet agent based os release
 dist_version
-read -r -p "[2] To automate the on-boarding process to the plattform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
+read -r -p "[2] To automate the on-boarding process to the platform, the puppet agent will be installed (and removed afterwards)? [Y/n]" PUPPET
 case "$PUPPET" in
     [yY][eE][sS]|[yY])
             case "$lsb_dist" in
@@ -431,7 +432,7 @@ case "$METRICS" in
         esac
         ;;
      *)
-         # no action, contiunue
+         # no action, continue
         ;;
 esac
 
@@ -455,19 +456,28 @@ case "$WORKLOAD" in
         ( set -x; sleep 20 )
         fi
 
-        echo "Going to install Docker. Setup takes up to 5minutes"
+        echo "Going to install Docker. Setup takes up to 5 minutes. Stay tuned "
 
-        $puppet agent -t && $puppet agent -t
+        # run puppet
+        if $verbose ; then
+            $puppet agent -t && $puppet agent -t
+        else
+            $puppet agent && $puppet agent
+        fi
         ;;
     [1])
-        echo "Option not available yet"
+        echo "Option not available yet. Please choose Docker."
         ;;
     [2])
-        echo "Option not available yet"
+        echo "Option not available yet. Please choose Docker."
         ;;
     *)
         printf "ok, bye ;-( \n"
         ;;
  esac
+
+# Run complete
+printf "[6] Script run complete. Check panel.idling.host for success \n"
+# TODO: create /api/status and check setup status
 
 # Run workload and earn money $$$
