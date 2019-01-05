@@ -437,9 +437,13 @@ fi
 # check for GCP mode
 # overwrite token with metadata token
 if [ -n "$gcp" ]; then
+  # get useraccount from gcp metadata
   header= "Metadata-Flavor: Google"
   metadata_url="http://metadata.google.internal/computeMetadata/v1/instance/attributes/helio/"
-  token=$(curl_headers $header $metadata_url)
+  email=$(curl_headers $header $metadata_url)
+  # json data to send
+  json="\"fqdn\":$fqdn,\"email\":\"$email\""
+  token=$(curl_response $json $gettoken)
 fi
 
 # new user or new server?
