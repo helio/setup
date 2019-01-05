@@ -10,7 +10,7 @@ set -e
 # TODO: script SHA, changed during upload / deploy
 SCRIPT_COMMIT_SHA=321120a4347749dc9348b0db4039fec327dff651
 
-# api endpoints
+# our API endpoints
 base="https://panel.idling.host"
 register="$base/server/init"
 register_ping="$base/server/init"
@@ -33,28 +33,34 @@ user_json="$facter/user.json"
 mail="support@helio.exchange"
 exit="Can not proceed, please contact our support at $mail or run again. Exiting..."
 
+# help message
+usage="$(basename "$0") [-h] [-v] [-a] [-t yourtoken] [-m yourmail] [-l ultimatequestion]
+where:
+    -h shows this help
+    -v enable verbose mode
+    -a enable auto setup (no questions asked)
+    -t set Helio panel token as argument
+    -g enable GCP mode, get token from metadata
+    -m set your user email as argument
+    -l Answer to the Ultimate Question of Life, the Universe, and Everything"
+
 # pass options to the script
-while getopts t:m:v:m: option
-do
-case "${option}" in
+# use getopts and don't support long tail options
+while getopts 'hvagt:m:l:' option; do
+  case "${option}" in
     t) token=${OPTARG};;
     m) mail=${OPTARG};;
     v) verbose=1;;
-    m) auto=1;;
-    h) help=1;;
-    \?)
-        echo "Invalid option: -$OPTARG" >&2
-        exit 1
-        ;;
-    :)
-        echo "Option -$OPTARG requires an argument." >&2
-        exit 1
-        ;;
-esac
+    a) auto=1;;
+    g) gcp=1;;
+    l) echo "42"
+       exit 1
+       ;;
+    h) echo "$usage"
+       exit 1
+       ;;
+  esac
 done
-
-# show help
-# TODO
 
 # set env var for puppet
 export LC_ALL=C
@@ -73,7 +79,7 @@ pkg_exists() {
     esac
 }
 
-# install packages, if they not exists
+# install packages, if they don't exist
 pkg_install() {
     lsb_dist=$(get_distribution)
     pkg=$@
@@ -123,7 +129,7 @@ dir_exists() {
 
 # find files in a dir
 find_files() {
-    find $1 -type f | grep -v "No such file or directory"
+    find $1 -type f 2>&1 | grep -v "No such file or directory"
 }
 
 # run curl with json data ($1) and target url ($2) and get http status
@@ -139,6 +145,14 @@ curl_response() {
     json="$1"
     url="$2"
     response=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{'$json'}' $url)
+    echo "$response"
+}
+
+# run curl with specified headers and parse answer from target url ($2)
+curl_headers() {
+    headers="$1"
+    url="$2"
+    response=$(curl -fsSL -X POST -H "$headers" $url)
     echo "$response"
 }
 
@@ -170,7 +184,7 @@ get_packages() {
     esac
 }
 
-# join new server / nodes to the Cloud
+# join new server / nodes to the Helio Cloud
 join_helio() {
     token="$@"
     # get hostname
@@ -307,7 +321,6 @@ case "$CHECK" in
         ;;
 esac
 
-
 # auto mode enabled?
 get_packages
 if [ -z "$auto" ]; then
@@ -346,15 +359,17 @@ case "$PUPPET" in
             case "$lsb_dist" in
                 debian|ubuntu)
                     # puppet release repo
-                    if pkg_exists puppet5-release; then
-                        printf "puppet5 release repo already installed\n"
+                    if pkg_exists puppet6-release; then
+                        printf "puppet6 release repo already installed\n"
                     else
                         if [ -z "$verbose" ]; then
-                            curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
-                            dpkg -i puppet5-release-$dist_version.deb &>/dev/null
+                            curl -sLO https://apt.puppetlabs.com/puppet6-release-$dist_version.deb -o /tmp/puppet6-release-$dist_version.deb
+                            dpkg -i puppet6-release-$dist_version.deb &>/dev/null
+                            sleep 3
                         else
-                            curl -sLO https://apt.puppetlabs.com/puppet5-release-$dist_version.deb -o /tmp/puppet5-release-$dist_version.deb
-                            dpkg -i puppet5-release-$dist_version.deb
+                            curl -sLO https://apt.puppetlabs.com/puppet6-release-$dist_version.deb -o /tmp/puppet6-release-$dist_version.deb
+                            dpkg -i puppet6-release-$dist_version.deb
+                            sleep 3
                         fi
 
                     fi
@@ -367,11 +382,11 @@ case "$PUPPET" in
                     ;;
                 centos|rhel)
                     # puppet release repo
-                    if pkg_exists puppet5-release; then
-                        printf "puppet5 release repo already installed\n"
+                    if pkg_exists puppet6-release; then
+                        printf "puppet6 release repo already installed\n"
                     else
-                        # install puppet5 repo from url
-                        rpm -Uvh https://yum.puppet.com/puppet5/puppet5-release-el-$dist_version.noarch.rpm
+                        # install puppet6 repo from url
+                        rpm -Uvh https://yum.puppet.com/puppet6/puppet6-release-el-$dist_version.noarch.rpm
                     fi
                     # puppet agent
                     if pkg_exists puppet-agent; then
@@ -412,12 +427,19 @@ case "$PUPPET" in
             ;;
     esac
 
-
 # auto mode enabled?
 if [ -z "$auto" ]; then
     read -r -p "[3] Do you already have an account at idling.host? [Y/n]" START
 else
     START=y
+fi
+
+# check for GCP mode
+# overwrite token with metadata token
+if [ -n "$gcp" ]; then
+  header= "Metadata-Flavor: Google"
+  metadata_url="http://metadata.google.internal/computeMetadata/v1/instance/attributes/helio/"
+  token=$(curl_headers $header $metadata_url)
 fi
 
 # new user or new server?
@@ -484,7 +506,6 @@ case "$METRICS" in
         ;;
 esac
 
-
 # auto mode enabled?
 # use Docker as default. TODO improve later
 if [ -z "$auto" ]; then
@@ -535,5 +556,3 @@ case "$WORKLOAD" in
 # Run complete
 printf "[6] Script run complete. Check panel.idling.host later for node status and success. Thanks\n"
 # TODO: create /api/status and check setup status
-
-# Run workload and earn money $$$

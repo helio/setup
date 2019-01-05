@@ -9,19 +9,20 @@ if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-comp
 fi
 ```
 
-`start-computing.sh` options: 
- * -m $yourmail
- * -t $servertoken
- * -v on
- * -a on
+`start-computing.sh` options:
+ * -h shows this help
+ * -v enable verbose mode
+ * -a enable auto setup (no questions asked)
+ * -t set Helio panel token as argument
+ * -m set your users email as argument
 
-### Example for autojoining:
+### Example for auto-joining:
 Requires an existing account and a token.
 
 ```shell
 curl -fsSL un.idling.host -o start-computing.sh
 if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-computing.sh'); then
-    sh start-computing.sh -t 6b4123cb:f33b1a4b1c22d7ac9dab0ab759a38584d0d2506b -a on
+    sh start-computing.sh -m your@mail.com -t 6b4123cb:f33b1a4b1c22d7ac9dab0ab759a38584d0d2506b -a
 fi
 ```
 
@@ -37,8 +38,8 @@ Outlook: In the future, you can also track e.g. how much money you've earned and
 You need to create an account for our platform. It's possible to create an account during script execution or on our website [panel.idling.host](https://panel.idling.host).
 *Pro mode: Use -m yourmail@domain.com during script execution and confirm the welcome mail in your mailbox*
 
-Every server needs to be verified and assigned to your account by a token. You can create a token by adding your servername within the suppliers area. 
-*Pro mode: Use -t token during script execution* 
+Every server needs to be verified and assigned to your account by a token. You can create a token by adding your servername within the suppliers area.
+*Pro mode: Use -t token during script execution*
 
 ## Supported OS
 
@@ -77,7 +78,7 @@ Every server needs to be verified and assigned to your account by a token. You c
 
 This script is installing and configuring the `puppet-agent` from [Puppetlabs](https://github.com/puppetlabs/puppet).
 The agent is used to create your clients certificate and let it sign from our certificate authority.
-Your node is assigned to your account, secured by an additional certificate signing request (CSR) based on an unique JWT. 
+Your node is assigned to your account, secured by an additional certificate signing request (CSR) based on an unique JWT.
 
 **important:** if your node is already puppet for another reason, please contact our support first.
 
