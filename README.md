@@ -9,10 +9,22 @@ if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-comp
 fi
 ```
 
-`start-computing.sh` options: 
- * -m yourmail
- * -t servertoken 
+`start-computing.sh` options:
+ * -h shows this help
+ * -v enable verbose mode
+ * -a enable auto setup (no questions asked)
+ * -t set Helio panel token as argument
+ * -m set your users email as argument
 
+### Example for auto-joining:
+Requires an existing account and a token.
+
+```shell
+curl -fsSL un.idling.host -o start-computing.sh
+if shasum -a 1 -s -c <(echo '35e6d88ed099d5c7fb1e91288e95dd8842e81af8 start-computing.sh'); then
+    sh start-computing.sh -m your@mail.com -t 6b4123cb:f33b1a4b1c22d7ac9dab0ab759a38584d0d2506b -a
+fi
+```
 
 ## Introduction
 
@@ -26,8 +38,8 @@ Outlook: In the future, you can also track e.g. how much money you've earned and
 You need to create an account for our platform. It's possible to create an account during script execution or on our website [panel.idling.host](https://panel.idling.host).
 *Pro mode: Use -m yourmail@domain.com during script execution and confirm the welcome mail in your mailbox*
 
-Every server needs to be verified and assigned to your account by a token. You can create a token by adding your servername within the suppliers area. 
-*Pro mode: Use -t token during script execution* 
+Every server needs to be verified and assigned to your account by a token. You can create a token by adding your servername within the suppliers area.
+*Pro mode: Use -t token during script execution*
 
 ## Supported OS
 
@@ -66,7 +78,7 @@ Every server needs to be verified and assigned to your account by a token. You c
 
 This script is installing and configuring the `puppet-agent` from [Puppetlabs](https://github.com/puppetlabs/puppet).
 The agent is used to create your clients certificate and let it sign from our certificate authority.
-Your node is assigned to your account, secured by an additional certificate siging request (CSR) based on an unique JWT. 
+Your node is assigned to your account, secured by an additional certificate signing request (CSR) based on an unique JWT.
 
 **important:** if your node is already puppet for another reason, please contact our support first.
 
@@ -74,7 +86,7 @@ Your node is assigned to your account, secured by an additional certificate sigi
 ## Choria
 
 The choria go binary connects your node to our broker, to receive tasks and orchestrate the workloads.
-The communication is fully secured by TLS, including user authentification.
+The communication is fully secured by TLS, including user authentication.
 We provision your node and make the following tasks available for our broker / backend:
 
 * facts (get system information)
@@ -102,7 +114,7 @@ Additional Kubernetes support will follow soon. Stay tuned.
 ## Prometheus
 
 Our system is collecting metrics from your system and store them on our [Prometheus](https://prometheus.io) cluster.
-We need those metrics, to bring computing tasks to your system, when it's save to do.
+We need those metrics, to bring computing tasks to your system, if it's safe.
 The metrics are also needed to calculate your contribution to our platform.
 You'll be able to monitor those metrics in our [panel.idling.host](https://panel.idling.host). Yay, free monitoring.
 
@@ -117,7 +129,7 @@ For a functional setup, the following protocols and connections should be allowe
 
 ### Outgoing
 
-This includes incoming pakets / answers for established connections.
+This includes incoming packets / answers for established connections.
 
 | Host  / Port            | protocol     | usage        |
 | :---------------------- |:------------ | :----------- |
