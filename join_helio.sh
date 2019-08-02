@@ -140,11 +140,15 @@ curl_status() {
     echo $status
 }
 
-# run curl with json data ($1) and target url ($2) and get response
+# run curl with json data ($1) and target url ($2) and optionally an Authorization header ($3) and get response
 curl_response() {
     json="$1"
     url="$2"
-    response=$(curl -fsSL -X POST -H "Content-Type: application/json" -d '{'$json'}' $url)
+    token="$3"
+    if [ -n "$token" ]; then 
+      authheader="-H 'Authorization: Bearer ${token}' "
+    fi
+    response=$(curl -fsSL -X POST ${authheader:-}-H "Content-Type: application/json" -d '{'$json'}' $url)
     echo "$response"
 }
 
@@ -190,7 +194,7 @@ join_helio() {
     # get hostname
     fqdn=$(get_fqdn)
     # json data to send
-    json="\"fqdn\":$fqdn,\"token\":\"$token\""
+    json="\"fqdn\":$fqdn"
 
     # get jwt for csr attributes
     if file_exists $csr_attributes; then
@@ -207,7 +211,7 @@ join_helio() {
     fi
 
     # get response and write csr token
-    response=$(curl_response $json $join)
+    response=$(curl_response $json $join $token)
     csrtoken=$(echo "$response"|jq -r '.token' 2> /dev/null)
     printf "custom_attributes:\n  challengePassword: \"$csrtoken\"" >> $csr_attributes
 
